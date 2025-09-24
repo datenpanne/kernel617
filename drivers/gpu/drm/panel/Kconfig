@@ -126,7 +126,7 @@ config DRM_PANEL_ELIDA_KD35T133
 	  KD35T133 controller for 320x480 LCD panels with MIPI-DSI
 	  system interfaces.
 
-config DRM_PANEL_HUAWEI_NT51021
+config DRM_PANEL_FEDERER_NT51021
 	tristate "Boe NT51021 panel"
 	depends on GPIOLIB && OF && REGULATOR
 	depends on DRM_MIPI_DSI
