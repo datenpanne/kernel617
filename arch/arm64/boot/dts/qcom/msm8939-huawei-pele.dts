@@ -188,7 +188,7 @@
 		pinctrl-0 = <&lcd_vsn_default>;*/
 	};
 
-	reg_tp_vci gpio-regulator@112 {
+	reg_tp_vci: gpio-regulator@112 {
 		compatible = "regulator-fixed";
 		regulator-name = "tp-vci";
 		gpio = <&tlmm 112 GPIO_ACTIVE_HIGH>;
