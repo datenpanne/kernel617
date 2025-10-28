@@ -188,23 +188,20 @@
 		pinctrl-0 = <&lcd_vsn_default>;*/
 	};
 
-	reg_tp_vdd: regulator-tp-vdd@112 {
+	reg_tp_vci gpio-regulator@112 {
 		compatible = "regulator-fixed";
-		regulator-name = "tp-vdd";
-		gpios = <&tlmm 112 GPIO_ACTIVE_HIGH>;
+		regulator-name = "tp-vci";
+		gpio = <&tlmm 112 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 		regulator-always-on;
-		regulator-boot-on;
 	};
 
-	reg_tp_vddio: regulator-tp-vddio@10 {
+	reg_tp_vddio: gpio-regulator@10 {
 		compatible = "regulator-fixed";
 		regulator-name = "tp-vddio";
-		vin-supply = <&pm8916_l16>;
-		gpios = <&tlmm 10 GPIO_ACTIVE_HIGH>;
+		gpio = <&tlmm 10 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 		regulator-always-on;
-		regulator-boot-on;
 	};
 
 /*	reg_tp_vdd: regulator-tp-vdd {
@@ -310,17 +307,16 @@
 		compatible = "cypress,tt21000";
 		reg = <0x24>;
 
-		interrupt-parent = <&tlmm>;
-		interrupts = <13 IRQ_TYPE_EDGE_FALLING>;
+		reset-gpios = <&tlmm 12 GPIO_ACTIVE_LOW>;
+	//	interrupt-parent = <&tlmm>;
+		interrupts-extended  = <&tlmm 13 IRQ_TYPE_EDGE_FALLING>;
 
-		reset-gpios = <&tlmm 12 GPIO_ACTIVE_HIGH>;
-
-		vdd-supply = <&reg_tp_vdd>;
+		vdd-supply = <&reg_tp_vci>;
 		vddio-supply = <&reg_tp_vddio>;
 
-		pinctrl-0 = <&touchscreen_default>;
+	/*	pinctrl-0 = <&touchscreen_default>;
 		pinctrl-1 = <&touchscreen_sleep>;
-		pinctrl-names = "default","sleep";
+		pinctrl-names = "default","sleep";*/
 	};
 };
 
@@ -358,7 +354,7 @@
 		reset-gpios = <&tlmm 25 GPIO_ACTIVE_LOW>;
 		disp-te-gpios = <&tlmm 24 GPIO_ACTIVE_HIGH>;
 
-		vddio-supply = <&reg_tp_vdd>;//place holder for TP
+		vddio-supply = <&pm8916_l6>;
 		vddio-incell-supply = <&pm8916_l16>;
 		vsp-supply = <&reg_lcd_vsp>;
 		vsn-supply = <&reg_lcd_vsn>;
@@ -604,17 +600,17 @@
 };*/
 
 &usb {
-	//extcon = <&usb_id>, <&usb_id>;
+	extcon = <&usb_id>, <&usb_id>;
 	extcon = <&charger>, <&usb_id>;
-	vbus-supply = <&usb_otg_vbus>;
+	//vbus-supply = <&usb_otg_vbus>;
 	status = "okay";
 	//extcon = <&bq24296>, <&usb_id>;
 	//vbus-supply = <&usb_otg_vbus>;
 };
 
 &usb_hs_phy {
-	//extcon = <&usb_id>;
-	extcon = <&charger>;
+	extcon = <&usb_id>;
+	//extcon = <&charger>;
 };
 
 &venus_mem {
@@ -742,7 +738,7 @@
 		bias-disable;
 	};
 
-	touchscreen_default: touchscreen-default-state {
+	/*touchscreen_default: touchscreen-default-state {
 		pins = "gpio12", "gpio13";
 		function = "gpio";
 
@@ -769,7 +765,7 @@
 		function = "gpio";
 		drive-strength = <2>;
 		bias-pull-up;
-	};
+	};*/
 
 	usb_id_default: usb-id-default-state {
 		pins = "gpio118";

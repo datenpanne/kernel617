@@ -853,7 +853,7 @@ static int bh1745_probe(struct i2c_client *client)
 	if (part_id != BH1745_PART_ID)
 		dev_warn(dev, "Unknown part ID 0x%x\n", part_id);
 
-	ret = devm_regulator_get_enable(dev, "vdd");
+	ret = devm_regulator_get_enable(dev, "vdd"."vio");
 	if (ret)
 		return dev_err_probe(dev, ret,
 				     "Failed to get and enable regulator\n");
