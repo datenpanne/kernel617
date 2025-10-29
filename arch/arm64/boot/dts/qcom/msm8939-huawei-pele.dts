@@ -317,8 +317,7 @@
 		reset-gpios = <&tlmm 25 GPIO_ACTIVE_LOW>;
 		disp-te-gpios = <&tlmm 24 GPIO_ACTIVE_HIGH>;
 
-		vddio-supply = <&pm8916_l6>;
-		vddio-incell-supply = <&pm8916_l16>;
+		vci-supply = <&pm8916_l16>;
 		vsp-supply = <&reg_lcd_vsp>;
 		vsn-supply = <&reg_lcd_vsn>;
 		vsp-gpios = <&tlmm 97 GPIO_ACTIVE_HIGH>;
@@ -542,12 +541,11 @@
 };*/
 
 &usb {
-	extcon = <&usb_id>, <&usb_id>;
+	//extcon = <&usb_id>, <&usb_id>;
 	extcon = <&charger>, <&usb_id>;
 	//vbus-supply = <&usb_otg_vbus>;
 	status = "okay";
 	//extcon = <&bq24296>, <&usb_id>;
-	//vbus-supply = <&usb_otg_vbus>;
 };
 
 &usb_hs_phy {

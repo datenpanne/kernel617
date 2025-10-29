@@ -30,8 +30,7 @@ struct pele_jdi_r69429 {
 };
 
 static const struct regulator_bulk_data pele_jdi_r69429_supplies[] = {
-	{ .supply = "vddio" },
-	{ .supply = "vddio-incell" },
+	{ .supply = "vci" },
 	{ .supply = "vsp" },
 	{ .supply = "vsn" },
 };
@@ -58,12 +57,12 @@ static void pele_jdi_r69429_power(struct pele_jdi_r69429 *ctx, int enable)
 	usleep_range(1000, 2000);
 	gpiod_set_value(ctx->blen_gpio, enable);
 	usleep_range(5000, 6000);
-	gpiod_set_value(ctx->vsn_gpio, enable);
-	usleep_range(5000, 6000);
 	gpiod_set_value(ctx->vsp_gpio, enable);
 	usleep_range(5000, 6000);
-	gpiod_set_value(ctx->vled_gpio, enable);
+	gpiod_set_value(ctx->vsn_gpio, enable);
 	usleep_range(5000, 6000);
+	//gpiod_set_value(ctx->vled_gpio, enable);
+	//usleep_range(5000, 6000);
 }
 
 static int pele_jdi_r69429_on(struct pele_jdi_r69429 *ctx)
@@ -151,6 +150,7 @@ static int pele_jdi_r69429_prepare(struct drm_panel *panel)
 	}
 
 	pele_jdi_r69429_power(ctx,1);
+	usleep_range(1000, 2000);
 
 	ret = mipi_dsi_dcs_nop(ctx->dsi);
 		if (ret < 0) {
@@ -177,11 +177,8 @@ static int pele_jdi_r69429_enable(struct drm_panel *panel)
 	struct device *dev = &ctx->dsi->dev;
 	int ret;
 
-	ret = regulator_bulk_enable(ARRAY_SIZE(pele_jdi_r69429_supplies), ctx->supplies);
-	if (ret < 0) {
-		dev_err(dev, "Failed to enable regulators: %d\n", ret);
-		return ret;
-	}
+	gpiod_set_value(ctx->vled_gpio, 1);
+	usleep_range(5000, 6000);
 
 	ret = pele_jdi_r69429_panel_on(ctx);
 	if (ret < 0) {
@@ -203,6 +200,9 @@ static int pele_jdi_r69429_disable(struct drm_panel *panel)
 	ret = pele_jdi_r69429_off(ctx);
 	if (ret < 0)
 		dev_err(dev, "Failed to un-initialize panel: %d\n", ret);
+
+	gpiod_set_value(ctx->vled_gpio, 0);
+	usleep_range(5000, 6000);
 
 	return 0;
 }

@@ -24,6 +24,7 @@ struct huawei_nt51021 {
 //	struct gpio_desc *bl_pwr_gpio;
 	struct gpio_desc *vled_en_gpio;
 
+	struct regulator *power;
 	struct regulator *vcc;
 	struct regulator *vddio;
 	struct regulator *vsp;
@@ -157,6 +158,25 @@ static int huawei_nt51021_prepare(struct drm_panel *panel)
 	struct device *dev = &ctx->dsi->dev;
 	int ret;
 
+	ret = regulator_enable(ctx->vddio);
+	if (ret < 0) {
+		dev_err(dev, "Failed to enable VDDIO regulator: %d\n", ret);
+		return ret;
+	}
+
+	ret = regulator_enable(ctx->vsp);
+	if (ret < 0) {
+		dev_err(dev, "Failed to enable VSP regulator: %d\n", ret);
+		return ret;
+	}
+	usleep_range(5000,6000);
+
+	ret = regulator_enable(ctx->vsn);
+	if (ret < 0) {
+		dev_err(dev, "Failed to enable VSN regulator: %d\n", ret);
+		return ret;
+	}
+
 	ret = regulator_enable(ctx->vcc);
 	if (ret < 0) {
 		dev_err(dev, "Failed to enable vcc regulator: %d\n", ret);
@@ -164,25 +184,12 @@ static int huawei_nt51021_prepare(struct drm_panel *panel)
 	}
 	msleep(500);
 
-	ret = regulator_enable(ctx->vddio);
+	ret = regulator_enable(ctx->power);
 	if (ret < 0) {
-		dev_err(dev, "Failed to enable VDDIO regulator: %d\n", ret);
+		dev_err(dev, "Failed to enable vcc regulator: %d\n", ret);
 		return ret;
 	}
 	msleep(50);
-
-	ret = regulator_enable(ctx->vsp);
-	if (ret < 0) {
-		dev_err(dev, "Failed to enable VSP regulator: %d\n", ret);
-		return ret;
-	}
-	msleep(500);
-
-	ret = regulator_enable(ctx->vsn);
-	if (ret < 0) {
-		dev_err(dev, "Failed to enable VSN regulator: %d\n", ret);
-		return ret;
-	}
 
 	ret = mipi_dsi_dcs_nop(ctx->dsi);
 		if (ret < 0) {
@@ -210,8 +217,9 @@ regdsb:
 	regulator_disable(ctx->vsn);
 	regulator_disable(ctx->vsp);
 	usleep_range(5000, 7000);
-	gpiod_set_value_cansleep(ctx->reset_gpio, 1);
 	regulator_disable(ctx->vddio);
+	gpiod_set_value_cansleep(ctx->reset_gpio, 1);
+	regulator_disable(ctx->power);
 	regulator_disable(ctx->vcc);
 	return ret;
 }
@@ -242,11 +250,12 @@ static int huawei_nt51021_unprepare(struct drm_panel *panel)
 	if (ret < 0)
 		dev_err(dev, "Failed to un-initialize panel: %d\n", ret);
 
-	regulator_disable(ctx->vsn);
 	regulator_disable(ctx->vsp);
+	regulator_disable(ctx->vsn);
 	usleep_range(5000, 7000);
-	gpiod_set_value_cansleep(ctx->reset_gpio, 1);
 	regulator_disable(ctx->vddio);
+	gpiod_set_value_cansleep(ctx->reset_gpio, 1);
+	regulator_disable(ctx->power);
 	regulator_disable(ctx->vcc);
 
 	return 0;
@@ -403,6 +412,11 @@ static int huawei_nt51021_probe(struct mipi_dsi_device *dsi)
 	ctx = devm_kzalloc(dev, sizeof(*ctx), GFP_KERNEL);
 	if (!ctx)
 		return -ENOMEM;
+
+	ctx->power = devm_regulator_get(dev, "power");
+	if (IS_ERR(ctx->power))
+		return dev_err_probe(dev, PTR_ERR(ctx->power),
+				     "Failed to get power regulator\n");
 
 	ctx->vcc = devm_regulator_get(dev, "vcc");
 	if (IS_ERR(ctx->vcc))

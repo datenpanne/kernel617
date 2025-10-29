@@ -29,13 +29,13 @@
 	};
 
 	reserved-memory {
-		/*cont_splash_mem: framebuffer@83000000 {
+		cont_splash_mem: framebuffer@83000000 {
 			compatible = "removed-dma-pool";
 			reg = <0x0 0x83000000 0x0 0x1A00000>;
 			no-map;
 		};
 
-		reserved@85000000 {
+	/*	reserved@85000000 {
 			reg = <0x0 0x85000000 0x0 0x1000000>;
 			no-map;
 		};*/
@@ -183,23 +183,21 @@
 		sound-name-prefix = "Headphones Switch";
 	};*/
 
-	lcd_vcc: regulator-lcd-vcc@32 {
+	lcd_vcc: gpio-regulato@32 {
 		compatible = "regulator-fixed";
 		regulator-name = "lcd-vcc";
-		//vin-supply = <&speaker_switch>;
 
-		gpios= <&tlmm 32 GPIO_ACTIVE_HIGH>;
+		gpio= <&tlmm 32 GPIO_ACTIVE_HIGH>;
 		regulator-always-on;
 		regulator-boot-on;
 		enable-active-high;
 	};
 
-	lcd_vddio: regulator-lcd-vddio@109 {
+	lcd_vddio: gpio-regulato@109 {
 		compatible = "regulator-fixed";
 		regulator-name = "lcd-vddio";
-		vin-supply = <&pm8916_l6>;
 
-		gpios= <&tlmm 109 GPIO_ACTIVE_HIGH>;
+		gpio= <&tlmm 109 GPIO_ACTIVE_HIGH>;
 		regulator-always-on;
 		regulator-boot-on;
 		enable-active-high;
@@ -318,7 +316,7 @@
 		interrupt-parent = <&tlmm>;
 		interrupts = <113 IRQ_TYPE_EDGE_FALLING>;
 		vdd-supply = <&pm8916_l17>;
-		//vio-supply = <&pm8916_l6>;
+		vio-supply = <&pm8916_l6>;
 
 		pinctrl-names = "default";
 		pinctrl-0 = <&light_irq_default>;
@@ -658,8 +656,7 @@
 &usb {
 	//extcon = <&usb_id>, <&usb_id>;
 	extcon = <&charger>, <&usb_id>;
-	vbus-supply = <&usb_otg_vbus>;
-	//usb-role-switch;
+	//vbus-supply = <&usb_otg_vbus>;
 
 	status = "okay";
 };
@@ -669,8 +666,8 @@
 };
 
 &usb_hs_phy {
-	//extcon = <&usb_id>;
-	extcon = <&charger>;
+	extcon = <&usb_id>;
+	//extcon = <&charger>;
 
 	qcom,init-seq = /bits/ 8 <0x0 0x74>,
 				<0x1 0x65>,
