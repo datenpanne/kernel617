@@ -243,8 +243,8 @@ static int pele_jdi_r69429_get_modes(struct drm_panel *panel,
 
 static const struct drm_panel_funcs pele_jdi_r69429_panel_funcs = {
 	.prepare = pele_jdi_r69429_prepare,
-	.enable = huawei_nt51021_enable,
-	.disable = huawei_nt51021_disable,
+	.enable = pele_jdi_r69429_enable,
+	.disable = pele_jdi_r69429_disable,
 	.unprepare = pele_jdi_r69429_unprepare,
 	.get_modes = pele_jdi_r69429_get_modes,
 };
