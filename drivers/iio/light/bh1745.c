@@ -16,6 +16,7 @@
 #include <linux/regmap.h>
 #include <linux/bits.h>
 #include <linux/bitfield.h>
+#include <linux/regulator/consumer.h>
 
 #include <linux/iio/iio.h>
 #include <linux/iio/sysfs.h>
@@ -853,10 +854,15 @@ static int bh1745_probe(struct i2c_client *client)
 	if (part_id != BH1745_PART_ID)
 		dev_warn(dev, "Unknown part ID 0x%x\n", part_id);
 
-	ret = devm_regulator_get_enable(dev, "vdd"."vio");
+	ret = devm_regulator_get_enable(dev, "vdd");
 	if (ret)
 		return dev_err_probe(dev, ret,
-				     "Failed to get and enable regulator\n");
+				     "Failed to get and enable  vdd regulator\n");
+
+	ret = devm_regulator_get_enable(dev, "vio");
+	if (ret)
+		return dev_err_probe(dev, ret,
+				     "Failed to get and enable  vio regulator\n");
 
 	ret = bh1745_init(data);
 	if (ret)
