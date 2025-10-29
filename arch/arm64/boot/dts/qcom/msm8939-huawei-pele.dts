@@ -204,38 +204,6 @@
 		regulator-always-on;
 	};
 
-/*	reg_tp_vdd: regulator-tp-vdd {
-		compatible = "regulator-fixed";
-		regulator-name = "tp-vdd";
-		vin-supply = <&pm8916_l17>;
-		regulator-min-microvolt = <2850000>;
-		regulator-max-microvolt = <2850000>;
-		regulator-always-on;
-		regulator-boot-on;
-
-		gpios = <&tlmm 112 GPIO_ACTIVE_HIGH>;
-		enable-active-high;
-		//startup-delay-us = <200000>; //delay 200
-		pinctrl-names = "default";
-		pinctrl-0 = <&tp_vdd_default>;
-	};
-
-	reg_tp_vddio: regulator-tp-vddio {
-		compatible = "regulator-fixed";
-		regulator-name = "tp-vddio";
-		vin-supply = <&pm8916_l16>;
-		regulator-min-microvolt = <1800000>;
-		regulator-max-microvolt = <1800000>;
-		regulator-always-on;
-		regulator-boot-on; 
-
-		gpios = <&tlmm 10 GPIO_ACTIVE_HIGH>;
-		//enable-active-high;
-		//startup-delay-us = <200000>; //delay 200
-		pinctrl-names = "default";
-		pinctrl-0 = <&tp_vddio_default>;
-	};*/
-
 	usb_id: usb-id {
 		compatible = "linux,extcon-usb-gpio";
 		id-gpios = <&tlmm 118 GPIO_ACTIVE_HIGH>;
@@ -308,15 +276,10 @@
 		reg = <0x24>;
 
 		reset-gpios = <&tlmm 12 GPIO_ACTIVE_LOW>;
-	//	interrupt-parent = <&tlmm>;
 		interrupts-extended  = <&tlmm 13 IRQ_TYPE_EDGE_FALLING>;
 
 		vdd-supply = <&reg_tp_vci>;
 		vddio-supply = <&reg_tp_vddio>;
-
-	/*	pinctrl-0 = <&touchscreen_default>;
-		pinctrl-1 = <&touchscreen_sleep>;
-		pinctrl-names = "default","sleep";*/
 	};
 };
 
@@ -406,28 +369,7 @@
 	qcom,hphl-jack-type-normally-open;
 	status = "okay";
 };
-/*
-&pm8916_mpps {
-	pinctrl-names = "default";
-	pinctrl-0 = <&pm8916_mpp2_in &pm8916_mpp4_in>;
 
-	pm8916_mpp2_in: pm8916-mpp2-in-state {
-		pinconf {
-			pins = "mpp2";
-			function = "analog"; //input
-			qcom,amux-route = <1>; //PMIC_MPP_AMUX_ROUTE_CH6
-		};
-	};
-
-	pm8916_mpp4_in: pm8916-mpp4-in-state {
-		pinconf {
-			pins = "mpp4";
-			function = "analog"; //input
-			qcom,amux-route = <3>; //PMIC_MPP_AMUX_ROUTE_CH8
-		};
-	};
-};
-*/
 &pm8916_resin {
 	linux,code = <KEY_VOLUMEDOWN>;
 
@@ -672,20 +614,6 @@
 		bias-disable;
 	};
 
-	/*lcd_vsp_default: lcd-vsp-default-state {
-		pins = "gpio97";
-		function = "gpio";
-		drive-strength = <2>;
-		bias-disable;
-	};
-
-	lcd_vsn_default: lcd-vsn-default-state {
-		pins = "gpio32";
-		function = "gpio";
-		drive-strength = <2>;
-		bias-disable;
-	};*/
-
 	mag_reset_default: mag-reset-default-state {
 		pins = "gpio36";
 		function = "gpio";
@@ -737,35 +665,6 @@
 		drive-strength = <2>;
 		bias-disable;
 	};
-
-	/*touchscreen_default: touchscreen-default-state {
-		pins = "gpio12", "gpio13";
-		function = "gpio";
-
-		drive-strength = <10>;
-		bias-pull-up;
-	};
-
-	touchscreen_sleep: touchscreen-sleep-state {
-		pins = "gpio12", "gpio13";
-		function = "gpio";
-		drive-strength = <2>;
-		bias-pull-down;
-	};
-
-	tp_vdd_default: reg-tp-vdd-default-state {
-		pins = "gpio112";
-		function = "gpio";
-		drive-strength = <2>;
-		bias-pull-up;
-	};
-
-	tp_vddio_default: reg-tp-vddio-default-state {
-		pins = "gpio10";
-		function = "gpio";
-		drive-strength = <2>;
-		bias-pull-up;
-	};*/
 
 	usb_id_default: usb-id-default-state {
 		pins = "gpio118";

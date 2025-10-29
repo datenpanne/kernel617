@@ -95,25 +95,35 @@ static int pele_jdi_r69429_on(struct pele_jdi_r69429 *ctx)
 					 0x19, 0x05);
 	mipi_dsi_dcs_set_tear_on_multi(&dsi_ctx, MIPI_DSI_DCS_TEAR_MODE_VBLANK);
 	mipi_dsi_dcs_set_pixel_format_multi(&dsi_ctx, 0x77);
-	mipi_dsi_dcs_set_tear_scanline_multi(&dsi_ctx, 0x077f);
 	mipi_dsi_dcs_set_column_address_multi(&dsi_ctx, 0x0000, 0x04af);
 	mipi_dsi_dcs_set_page_address_multi(&dsi_ctx, 0x0000, 0x077f);
+	mipi_dsi_dcs_set_tear_scanline_multi(&dsi_ctx, 0x077f);
 	mipi_dsi_dcs_write_seq_multi(&dsi_ctx, MIPI_DCS_WRITE_MEMORY_START,
 				     0x00);
-	mipi_dsi_dcs_set_display_brightness_multi(&dsi_ctx, 0x0000);
+	mipi_dsi_dcs_set_display_brightness_multi(&dsi_ctx, 0x00);
 	mipi_dsi_dcs_write_seq_multi(&dsi_ctx, MIPI_DCS_WRITE_CONTROL_DISPLAY,
 				     0x24);
 	mipi_dsi_dcs_write_seq_multi(&dsi_ctx, MIPI_DCS_SET_CABC_MIN_BRIGHTNESS,
 				     0x06);
 	mipi_dsi_dcs_write_seq_multi(&dsi_ctx, MIPI_DCS_WRITE_POWER_SAVE, 0x01);
-	mipi_dsi_dcs_exit_sleep_mode_multi(&dsi_ctx);
-	mipi_dsi_msleep(&dsi_ctx, 110);
-	mipi_dsi_dcs_set_display_on_multi(&dsi_ctx);
-	mipi_dsi_msleep(&dsi_ctx, 20);
 
 	return dsi_ctx.accum_err;
 }
 
+static int pele_jdi_r69429_panel_on(struct pele_jdi_r69429 *ctx)
+{
+	struct mipi_dsi_multi_context dsi_ctx = { .dsi = ctx->dsi };
+
+	ctx->dsi->mode_flags |= MIPI_DSI_MODE_LPM;
+
+	mipi_dsi_dcs_write_seq_multi(&dsi_ctx, MIPI_DCS_WRITE_POWER_SAVE, 0x01);
+	mipi_dsi_dcs_exit_sleep_mode_multi(&dsi_ctx);
+	mipi_dsi_msleep(&dsi_ctx, 120);
+	mipi_dsi_dcs_set_display_on_multi(&dsi_ctx);
+	mipi_dsi_msleep(&dsi_ctx, 80);
+
+	return dsi_ctx.accum_err;
+}
 static int pele_jdi_r69429_off(struct pele_jdi_r69429 *ctx)
 {
 	struct mipi_dsi_multi_context dsi_ctx = { .dsi = ctx->dsi };
@@ -161,7 +171,30 @@ static int pele_jdi_r69429_prepare(struct drm_panel *panel)
 	return 0;
 }
 
-static int pele_jdi_r69429_unprepare(struct drm_panel *panel)
+static int pele_jdi_r69429_enable(struct drm_panel *panel)
+{
+	struct pele_jdi_r69429 *ctx = to_pele_jdi_r69429(panel);
+	struct device *dev = &ctx->dsi->dev;
+	int ret;
+
+	ret = regulator_bulk_enable(ARRAY_SIZE(pele_jdi_r69429_supplies), ctx->supplies);
+	if (ret < 0) {
+		dev_err(dev, "Failed to enable regulators: %d\n", ret);
+		return ret;
+	}
+
+	ret = pele_jdi_r69429_panel_on(ctx);
+	if (ret < 0) {
+		dev_err(dev, "Failed to initialize panel: %d\n", ret);
+		gpiod_set_value_cansleep(ctx->reset_gpio, 1);
+		regulator_bulk_disable(ARRAY_SIZE(pele_jdi_r69429_supplies), ctx->supplies);
+		return ret;
+	}
+
+	return 0;
+}
+
+static int pele_jdi_r69429_disable(struct drm_panel *panel)
 {
 	struct pele_jdi_r69429 *ctx = to_pele_jdi_r69429(panel);
 	struct device *dev = &ctx->dsi->dev;
@@ -170,6 +203,13 @@ static int pele_jdi_r69429_unprepare(struct drm_panel *panel)
 	ret = pele_jdi_r69429_off(ctx);
 	if (ret < 0)
 		dev_err(dev, "Failed to un-initialize panel: %d\n", ret);
+
+	return 0;
+}
+
+static int pele_jdi_r69429_unprepare(struct drm_panel *panel)
+{
+	struct pele_jdi_r69429 *ctx = to_pele_jdi_r69429(panel);
 
 	gpiod_set_value_cansleep(ctx->reset_gpio, 1);
 
@@ -203,6 +243,8 @@ static int pele_jdi_r69429_get_modes(struct drm_panel *panel,
 
 static const struct drm_panel_funcs pele_jdi_r69429_panel_funcs = {
 	.prepare = pele_jdi_r69429_prepare,
+	.enable = huawei_nt51021_enable,
+	.disable = huawei_nt51021_disable,
 	.unprepare = pele_jdi_r69429_unprepare,
 	.get_modes = pele_jdi_r69429_get_modes,
 };
@@ -224,8 +266,6 @@ static int pele_jdi_r69429_bl_update_status(struct backlight_device *bl)
 	return 0;
 }
 
-// TODO: Check if /sys/class/backlight/.../actual_brightness actually returns
-// correct values. If not, remove this function.
 static int pele_jdi_r69429_bl_get_brightness(struct backlight_device *bl)
 {
 	struct mipi_dsi_device *dsi = bl_get_data(bl);
