@@ -332,13 +332,13 @@
 		compatible = "rohm,bh1745";
 		reg = <0x38>;
 
-		//interrupt-parent = <&tlmm>;
-		interrupts-extended  = <113 IRQ_TYPE_EDGE_FALLING>;
+		interrupt-parent = <&tlmm>;
+		interrupts  = <113 IRQ_TYPE_EDGE_FALLING>;
 		vdd-supply = <&pm8916_l17>;
 		vio-supply = <&pm8916_l6>;
 
-		/*pinctrl-names = "default";
-		pinctrl-0 = <&light_irq_default>;*/
+		pinctrl-names = "default";
+		pinctrl-0 = <&light_irq_default>;
 	};
 
 	flash-led-controller@63 {
@@ -431,13 +431,15 @@
 		reg = <0>;
 
 		vcc-supply = <&lcd_vcc>;
-		vddio-supply = <&lcd_vddio>;
+		vddio-supply = <&pm8916_l6>;
 		vsp-supply = <&reg_lcd_vsp>;
 		vsn-supply = <&reg_lcd_vsn>;
+		power-supply = <&lcd_vddio>;
+		vled-supply = <&reg_lcd_vled>;
 		//power-gpios = <&tlmm 32 GPIO_ACTIVE_HIGH>;
 		//blpower-gpios = <&tlmm 109 GPIO_ACTIVE_HIGH>;
 
-		backlight-gpios = <&tlmm 97 GPIO_ACTIVE_LOW>;
+		//backlight-gpios = <&tlmm 97 GPIO_ACTIVE_LOW>;
 
 		reset-gpios = <&tlmm 25 GPIO_ACTIVE_LOW>;
 	//	te-gpios = <&tlmm 24 GPIO_ACTIVE_HIGH>;
@@ -764,13 +766,13 @@
 		bias-disable;
 	};
 
-	/*light_irq_default: light-irq-default-state {
+	light_irq_default: light-irq-default-state {
 		pins = "gpio113";
 		function = "gpio";
 
 		drive-strength = <2>;
 		bias-disable;
-	};*/
+	};
 
 	mdss_default: mdss-default-state {
 		pins = "gpio25";
