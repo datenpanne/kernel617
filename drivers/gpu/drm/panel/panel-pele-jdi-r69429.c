@@ -22,17 +22,22 @@ struct pele_jdi_r69429 {
 	struct mipi_dsi_device *dsi;
 	struct regulator_bulk_data *supplies;
 	struct gpio_desc *reset_gpio;
-	struct gpio_desc *vsn_gpio;
+	/*struct gpio_desc *vsn_gpio;
 	struct gpio_desc *vsp_gpio;
-	struct gpio_desc *vled_gpio;
 	struct gpio_desc *blen_gpio;
 	struct gpio_desc *vcc_gpio;
+	struct gpio_desc *vled_gpio;*/
 };
 
 static const struct regulator_bulk_data pele_jdi_r69429_supplies[] = {
 	{ .supply = "vci" },
 	{ .supply = "vsp" },
 	{ .supply = "vsn" },
+	{ .supply = "vsp-gpio" },
+	{ .supply = "vsn-gpio" },
+	{ .supply = "vcc-gpio" },
+	{ .supply = "backlight-gpio" },
+	{ .supply = "vled-gpio" },
 };
 
 static inline
@@ -51,7 +56,7 @@ static void pele_jdi_r69429_reset(struct pele_jdi_r69429 *ctx)
 	usleep_range(5000, 6000);
 }
 
-static void pele_jdi_r69429_power(struct pele_jdi_r69429 *ctx, int enable)
+/*static void pele_jdi_r69429_power(struct pele_jdi_r69429 *ctx, int enable)
 {
 	gpiod_set_value(ctx->vcc_gpio, enable);
 	usleep_range(1000, 2000);
@@ -63,7 +68,7 @@ static void pele_jdi_r69429_power(struct pele_jdi_r69429 *ctx, int enable)
 	usleep_range(5000, 6000);
 	//gpiod_set_value(ctx->vled_gpio, enable);
 	//usleep_range(5000, 6000);
-}
+}*/
 
 static int pele_jdi_r69429_on(struct pele_jdi_r69429 *ctx)
 {
@@ -149,8 +154,8 @@ static int pele_jdi_r69429_prepare(struct drm_panel *panel)
 		return ret;
 	}
 
-	pele_jdi_r69429_power(ctx,1);
-	usleep_range(1000, 2000);
+	/*pele_jdi_r69429_power(ctx,1);
+	usleep_range(1000, 2000);*/
 
 	ret = mipi_dsi_dcs_nop(ctx->dsi);
 		if (ret < 0) {
@@ -177,8 +182,8 @@ static int pele_jdi_r69429_enable(struct drm_panel *panel)
 	struct device *dev = &ctx->dsi->dev;
 	int ret;
 
-	gpiod_set_value(ctx->vled_gpio, 1);
-	usleep_range(5000, 6000);
+	/*gpiod_set_value(ctx->vled_gpio, 1);
+	usleep_range(5000, 6000);*/
 
 	ret = pele_jdi_r69429_panel_on(ctx);
 	if (ret < 0) {
@@ -201,8 +206,8 @@ static int pele_jdi_r69429_disable(struct drm_panel *panel)
 	if (ret < 0)
 		dev_err(dev, "Failed to un-initialize panel: %d\n", ret);
 
-	gpiod_set_value(ctx->vled_gpio, 0);
-	usleep_range(5000, 6000);
+	/*gpiod_set_value(ctx->vled_gpio, 0);
+	usleep_range(5000, 6000);*/
 
 	return 0;
 }
@@ -213,7 +218,7 @@ static int pele_jdi_r69429_unprepare(struct drm_panel *panel)
 
 	gpiod_set_value_cansleep(ctx->reset_gpio, 1);
 
-	pele_jdi_r69429_power(ctx,0);
+//	pele_jdi_r69429_power(ctx,0);
 	regulator_bulk_disable(ARRAY_SIZE(pele_jdi_r69429_supplies), ctx->supplies);
 	usleep_range(1000, 2000);
 
@@ -324,17 +329,17 @@ static int pele_jdi_r69429_probe(struct mipi_dsi_device *dsi)
 		return dev_err_probe(dev, PTR_ERR(ctx->reset_gpio),
 				     "Failed to get reset-gpios\n");
 
-	ctx->vcc_gpio = devm_gpiod_get(dev, "vcc", GPIOD_OUT_LOW);
+	/*ctx->vcc_gpio = devm_gpiod_get(dev, "vcc", GPIOD_OUT_LOW);
 	if (IS_ERR(ctx->vcc_gpio))
 		return dev_err_probe(dev, PTR_ERR(ctx->vcc_gpio),
-				     "Failed to get vcc-gpios\n");
+				     "Failed to get vcc-gpios\n");*/
 
 	/*ctx->tp_vci_gpio = devm_gpiod_get(dev, "vci", GPIOD_OUT_HIGH);
 	if (IS_ERR(ctx->tp_vci_gpio))
 		return dev_err_probe(dev, PTR_ERR(ctx->tp_vci_gpio),
 				     "Failed to get vci-gpios\n");*/
 
-	ctx->blen_gpio = devm_gpiod_get(dev, "backlight", GPIOD_OUT_LOW);
+/*	ctx->blen_gpio = devm_gpiod_get(dev, "backlight", GPIOD_OUT_LOW);
 	if (IS_ERR(ctx->blen_gpio))
 		return dev_err_probe(dev, PTR_ERR(ctx->blen_gpio),
 				     "Failed to get backlight-gpios\n");
@@ -349,10 +354,10 @@ static int pele_jdi_r69429_probe(struct mipi_dsi_device *dsi)
 		return dev_err_probe(dev, PTR_ERR(ctx->vsn_gpio),
 				     "Failed to get vsn-gpios\n");
 
-	ctx->vled_gpio = devm_gpiod_get(dev, "vled", GPIOD_OUT_LOW);
+	ctx->vled_gpio = devm_gpiod_get(dev, "vled", GPIOD_OUT_HIGH);
 	if (IS_ERR(ctx->vled_gpio))
 		return dev_err_probe(dev, PTR_ERR(ctx->vled_gpio),
-				     "Failed to get vled-gpios\n");
+				     "Failed to get vled-gpios\n");*/
 
 	ctx->dsi = dsi;
 	mipi_dsi_set_drvdata(dsi, ctx);

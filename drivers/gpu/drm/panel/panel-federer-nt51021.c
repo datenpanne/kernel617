@@ -93,7 +93,7 @@ static int huawei_nt51021_on(struct huawei_nt51021 *ctx)
 	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x8c, 0x80);
 	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0xcd, 0x6c);
 	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0xc8, 0xfc);
-	//mipi_dsi_generic_write_seq_multi(&dsi_ctx, HUAWEI_NT51021_BRIGHTNESS, 0x00);
+	mipi_dsi_generic_write_seq_multi(&dsi_ctx, HUAWEI_NT51021_BRIGHTNESS, 0x00);
 	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x97, 0x00);
 	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x83, 0xbb);
 	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x84, 0x22);
@@ -124,7 +124,6 @@ static int huawei_nt51021_on(struct huawei_nt51021 *ctx)
 	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x9c, 0x10);
 	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x83, 0x00);
 	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x84, 0x00);
-	mipi_dsi_generic_write_seq_multi(&dsi_ctx, HUAWEI_NT51021_BRIGHTNESS, 0x00);
 	mipi_dsi_dcs_exit_sleep_mode_multi(&dsi_ctx);
 	mipi_dsi_usleep_range(&dsi_ctx, 5000, 6000);
 	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x8f, 0x00);
@@ -253,8 +252,8 @@ static int huawei_nt51021_unprepare(struct drm_panel *panel)
 	regulator_disable(ctx->vsp);
 	regulator_disable(ctx->vsn);
 	usleep_range(5000, 7000);
-	regulator_disable(ctx->vddio);
 	gpiod_set_value_cansleep(ctx->reset_gpio, 1);
+	regulator_disable(ctx->vddio);
 	regulator_disable(ctx->power);
 	regulator_disable(ctx->vcc);
 
@@ -457,7 +456,7 @@ static int huawei_nt51021_probe(struct mipi_dsi_device *dsi)
 			| MIPI_DSI_MODE_VIDEO_BURST
 			| MIPI_DSI_MODE_VIDEO_HSE
 			| MIPI_DSI_MODE_NO_EOT_PACKET;
-			//| MIPI_DSI_CLOCK_NON_CONTINUOUS; //black screeen!?
+			//| MIPI_DSI_CLOCK_NON_CONTINUOUS; //black screen!?
 
 	drm_panel_init(&ctx->panel, dev, &huawei_nt51021_panel_funcs,
 		       DRM_MODE_CONNECTOR_DSI);

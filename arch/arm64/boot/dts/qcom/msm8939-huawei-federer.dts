@@ -285,6 +285,17 @@
 		enable-active-high;
 	};
 
+	otg_path: otg_path {
+		compatible = "regulator-fixed";
+		regulator-name = "otg-path";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		/* does not handle "gpios" property! */
+		gpio = <&tlmm 108 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		vin-supply = <&usb_otg_vbus>;	/* request otg booster of bq24296 */
+	};
+
 	usb_id: usb-id {
 		compatible = "linux,extcon-usb-gpio";
 		id-gpios = <&tlmm 117 GPIO_ACTIVE_HIGH>;
@@ -309,17 +320,17 @@
 				"0", "0", "1";
 	};
 
-	light@38 {
+	light@38 { //not recognising
 		compatible = "rohm,bh1745";
 		reg = <0x38>;
 
 		interrupt-parent = <&tlmm>;
-		interrupts = <113 IRQ_TYPE_EDGE_FALLING>;
+		interrupts-extended  = <113 IRQ_TYPE_EDGE_FALLING>;
 		vdd-supply = <&pm8916_l17>;
 		vio-supply = <&pm8916_l6>;
 
-		pinctrl-names = "default";
-		pinctrl-0 = <&light_irq_default>;
+		/*pinctrl-names = "default";
+		pinctrl-0 = <&light_irq_default>;*/
 	};
 
 	flash-led-controller@63 {
@@ -418,7 +429,7 @@
 		//power-gpios = <&tlmm 32 GPIO_ACTIVE_HIGH>;
 		//blpower-gpios = <&tlmm 109 GPIO_ACTIVE_HIGH>;
 
-		backlight-gpios = <&tlmm 97 GPIO_ACTIVE_HIGH>;
+		backlight-gpios = <&tlmm 97 GPIO_ACTIVE_LOW>;
 
 		reset-gpios = <&tlmm 25 GPIO_ACTIVE_LOW>;
 	//	te-gpios = <&tlmm 24 GPIO_ACTIVE_HIGH>;
@@ -656,7 +667,7 @@
 &usb {
 	//extcon = <&usb_id>, <&usb_id>;
 	extcon = <&charger>, <&usb_id>;
-	//vbus-supply = <&usb_otg_vbus>;
+	vbus-supply = <&otg_path>;
 
 	status = "okay";
 };
@@ -666,8 +677,8 @@
 };
 
 &usb_hs_phy {
-	extcon = <&usb_id>;
-	//extcon = <&charger>;
+	//extcon = <&usb_id>;
+	extcon = <&charger>;
 
 	qcom,init-seq = /bits/ 8 <0x0 0x74>,
 				<0x1 0x65>,
@@ -745,13 +756,13 @@
 		bias-disable;
 	};
 
-	light_irq_default: light-irq-default-state {
+	/*light_irq_default: light-irq-default-state {
 		pins = "gpio113";
 		function = "gpio";
 
 		drive-strength = <2>;
 		bias-disable;
-	};
+	};*/
 
 	mdss_default: mdss-default-state {
 		pins = "gpio25";
@@ -873,8 +884,8 @@
 	// #address-cells = <1>;
 	//#size-cells = <0>;
 
-		io-channels = <&pm8916_vadc 0x6>;//, <&pm8916_vadc 0x30>;//, <&pm8916_vadc 0x11>;
-		io-channel-names = "voltage";//, "temperature";//, "current";
+		io-channels = <&pm8916_vadc 0x6>, <&pm8916_vadc 0x30>, <&pm8916_vadc 0x11>;
+		io-channel-names = "voltage", "temperature", "power";
 
 		//charged-gpios = <&tlmm 62>;
 		monitored-battery = <&battery>;

@@ -188,6 +188,51 @@
 		pinctrl-0 = <&lcd_vsn_default>;*/
 	};
 
+	reg_lcd_vsp_gpio: gpio-regulator@97 {
+		compatible = "regulator-fixed";
+		regulator-name = "vsp-gpio";
+		gpio = <&tlmm 97 GPIO_ACTIVE_HIGH>;
+		regulator-always-on;
+		regulator-boot-on;
+		enable-active-high;
+	};
+
+	reg_lcd_vsn_gpio: gpio-regulator@32 {
+		compatible = "regulator-fixed";
+		regulator-name = "vsn-gpio";
+		gpio = <&tlmm 32 GPIO_ACTIVE_HIGH>;
+		regulator-always-on;
+		regulator-boot-on;
+		enable-active-high;
+	};
+
+	reg_lcd_vcc_gpio: gpio-regulator@2 {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc-gpio";
+		gpio = <&tlmm 2 GPIO_ACTIVE_HIGH>;
+		regulator-always-on;
+		regulator-boot-on;
+		enable-active-high;
+	};
+
+	reg_lcd_backlight_gpio: gpio-regulator@3 {
+		compatible = "regulator-fixed";
+		regulator-name = "backlight--gpio";
+		gpio = <&tlmm 3 GPIO_ACTIVE_HIGH>;
+		regulator-always-on;
+		regulator-boot-on;
+		enable-active-high;
+	};
+
+	reg_lcd_vled_gpio: gpio-regulator@109 {
+		compatible = "regulator-fixed";
+		regulator-name = "vled--gpio";
+		gpio = <&tlmm 109 GPIO_ACTIVE_HIGH>;
+		regulator-always-on;
+		regulator-boot-on;
+		enable-active-high;
+	};
+
 	reg_tp_vci: gpio-regulator@112 {
 		compatible = "regulator-fixed";
 		regulator-name = "tp-vci";
@@ -320,11 +365,17 @@
 		vci-supply = <&pm8916_l16>;
 		vsp-supply = <&reg_lcd_vsp>;
 		vsn-supply = <&reg_lcd_vsn>;
-		vsp-gpios = <&tlmm 97 GPIO_ACTIVE_HIGH>;
+		vsp-gpio-supply = <&reg_lcd_vsp_gpio>;
+		vsn-gpio-supply = <&reg_lcd_vsn_gpio>;
+		vcc-gpio-supply = <&reg_lcd_vcc_gpio>;
+		backlight-gpio-supply = <&reg_lcd_backlight_gpio>;
+		vled-gpio-supply = <&reg_lcd_vled_gpio>
+
+		/*vsp-gpios = <&tlmm 97 GPIO_ACTIVE_HIGH>;
 		vsn-gpios = <&tlmm 32 GPIO_ACTIVE_HIGH>;
 		vcc-gpios = <&tlmm 2 GPIO_ACTIVE_HIGH>;
 		backlight-gpios = <&tlmm 3 GPIO_ACTIVE_HIGH>;
-		vled-gpios = <&tlmm 109 GPIO_ACTIVE_HIGH>;
+		vled-gpios = <&tlmm 109 GPIO_ACTIVE_HIGH>;*/
 
 		port {
 			panel_in: endpoint {
