@@ -369,7 +369,7 @@
 		vsn-gpio-supply = <&reg_lcd_vsn_gpio>;
 		vcc-gpio-supply = <&reg_lcd_vcc_gpio>;
 		backlight-gpio-supply = <&reg_lcd_backlight_gpio>;
-		vled-gpio-supply = <&reg_lcd_vled_gpio>
+		vled-gpio-supply = <&reg_lcd_vled_gpio>;
 
 		/*vsp-gpios = <&tlmm 97 GPIO_ACTIVE_HIGH>;
 		vsn-gpios = <&tlmm 32 GPIO_ACTIVE_HIGH>;
