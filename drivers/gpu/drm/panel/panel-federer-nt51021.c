@@ -22,13 +22,14 @@ struct huawei_nt51021 {
 	struct gpio_desc *reset_gpio;
 //	struct gpio_desc *vcc_pwr_gpio;
 //	struct gpio_desc *bl_pwr_gpio;
-	struct gpio_desc *vled_en_gpio;
+	//struct gpio_desc *vled_en_gpio;
 
 	struct regulator *power;
 	struct regulator *vcc;
 	struct regulator *vddio;
 	struct regulator *vsp;
 	struct regulator *vsn;
+	struct regulator *vled;
 
 	int hw_led_en_flag; //taken from original source
 };
@@ -67,11 +68,12 @@ static void huawei_nt51021_reset(struct huawei_nt51021 *ctx)
 
 static void huawei_nt51021_gpio_vled(struct huawei_nt51021 *ctx, int enable)
 {
-	gpiod_set_value(ctx->vled_en_gpio, enable);
-
+	//gpiod_set_value(ctx->vled_en_gpio, enable);
 	if (enable) {
+		regulator_enable(ctx->vled);
 		ctx->hw_led_en_flag = 1;
 	} else {
+		regulator_disable(ctx->vled);
 		ctx->hw_led_en_flag = 0;
 	}
 }
@@ -216,8 +218,8 @@ regdsb:
 	regulator_disable(ctx->vsn);
 	regulator_disable(ctx->vsp);
 	usleep_range(5000, 7000);
-	regulator_disable(ctx->vddio);
 	gpiod_set_value_cansleep(ctx->reset_gpio, 1);
+	regulator_disable(ctx->vddio);
 	regulator_disable(ctx->power);
 	regulator_disable(ctx->vcc);
 	return ret;
@@ -437,15 +439,20 @@ static int huawei_nt51021_probe(struct mipi_dsi_device *dsi)
 		return dev_err_probe(dev, PTR_ERR(ctx->vsn),
 				     "Failed to get vsn regulator\n");
 
+	ctx->vled = devm_regulator_get(dev, "vled");
+	if (IS_ERR(ctx->vled))
+		return dev_err_probe(dev, PTR_ERR(ctx->vled),
+				     "Failed to get vled regulator\n");
+
 	ctx->reset_gpio = devm_gpiod_get(dev, "reset", GPIOD_OUT_HIGH);
 	if (IS_ERR(ctx->reset_gpio))
 		return dev_err_probe(dev, PTR_ERR(ctx->reset_gpio),
 				     "Failed to get reset-gpios\n");
 
-	ctx->vled_en_gpio = devm_gpiod_get(dev, "backlight", GPIOD_OUT_HIGH);
+/*	ctx->vled_en_gpio = devm_gpiod_get(dev, "backlight", GPIOD_OUT_HIGH);
 	if (IS_ERR(ctx->vled_en_gpio))
 		return dev_err_probe(dev, PTR_ERR(ctx->vled_en_gpio),
-				     "Failed to get backlight-gpios\n");
+				     "Failed to get backlight-gpios\n");*/
 
 	ctx->dsi = dsi;
 	mipi_dsi_set_drvdata(dsi, ctx);

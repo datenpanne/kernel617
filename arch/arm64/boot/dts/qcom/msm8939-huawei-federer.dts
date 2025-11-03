@@ -183,7 +183,7 @@
 		sound-name-prefix = "Headphones Switch";
 	};*/
 
-	lcd_vcc: gpio-regulato@32 {
+	lcd_vcc: gpio-regulator@32 {
 		compatible = "regulator-fixed";
 		regulator-name = "lcd-vcc";
 
@@ -193,7 +193,7 @@
 		enable-active-high;
 	};
 
-	lcd_vddio: gpio-regulato@109 {
+	lcd_vddio: gpio-regulator@109 {
 		compatible = "regulator-fixed";
 		regulator-name = "lcd-vddio";
 
@@ -285,6 +285,14 @@
 		enable-active-high;
 	};
 
+	reg_lcd_vled: gpio-regulator@97 {
+		compatible = "regulator-fixed";
+		regulator-name = "lcd-vled";
+		gpio = <&tlmm 97 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		regulator-boot-on;
+	};
+
 	otg_path: otg_path {
 		compatible = "regulator-fixed";
 		regulator-name = "otg-path";
@@ -324,7 +332,7 @@
 		compatible = "rohm,bh1745";
 		reg = <0x38>;
 
-		interrupt-parent = <&tlmm>;
+		//interrupt-parent = <&tlmm>;
 		interrupts-extended  = <113 IRQ_TYPE_EDGE_FALLING>;
 		vdd-supply = <&pm8916_l17>;
 		vio-supply = <&pm8916_l6>;
