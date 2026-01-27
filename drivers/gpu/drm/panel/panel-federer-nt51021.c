@@ -85,18 +85,11 @@ static int huawei_nt51021_on(struct huawei_nt51021 *ctx)
 	ctx->dsi->mode_flags |= MIPI_DSI_MODE_LPM;
 
 	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x8f, 0xa5);
-	mipi_dsi_usleep_range(&dsi_ctx, 1000, 2000);
+	mipi_dsi_usleep_range(&dsi_ctx, 5000, 6000);
 	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x01, 0x00);
-	mipi_dsi_msleep(&dsi_ctx, 20);
+	mipi_dsi_msleep(&dsi_ctx, 30);
 	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x8f, 0xa5);
 	mipi_dsi_usleep_range(&dsi_ctx, 1000, 2000);
-	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x83, 0x00);
-	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x84, 0x00);
-	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x8c, 0x80);
-	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0xcd, 0x6c);
-	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0xc8, 0xfc);
-	mipi_dsi_generic_write_seq_multi(&dsi_ctx, HUAWEI_NT51021_BRIGHTNESS, 0x00);
-	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x97, 0x00);
 	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x83, 0xbb);
 	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x84, 0x22);
 	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x96, 0x00);
@@ -118,14 +111,19 @@ static int huawei_nt51021_on(struct huawei_nt51021 *ctx)
 	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0xb4, 0x1c);
 	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0xb5, 0x38);
 	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0xb6, 0x30);
+	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x83, 0x00);
+	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x84, 0x00);
+	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x8c, 0x80);
+	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0xcd, 0x6c);
+	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0xc8, 0xfc);
+	mipi_dsi_generic_write_seq_multi(&dsi_ctx, HUAWEI_NT51021_BRIGHTNESS, 0x00);
+	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x97, 0x00);
 	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x83, 0xaa);
 	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x84, 0x11);
 	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0xa9, 0x4b);
 	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x85, 0x04);
 	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x86, 0x08);
 	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x9c, 0x10);
-	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x83, 0x00);
-	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x84, 0x00);
 	mipi_dsi_dcs_exit_sleep_mode_multi(&dsi_ctx);
 	mipi_dsi_usleep_range(&dsi_ctx, 5000, 6000);
 	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x8f, 0x00);
@@ -142,6 +140,8 @@ static int huawei_nt51021_off(struct huawei_nt51021 *ctx)
 
 	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x8f, 0xa5);
 	mipi_dsi_msleep(&dsi_ctx, 20);
+	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x83, 0x00);
+	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x84, 0x00);
 	mipi_dsi_dcs_set_display_off_multi(&dsi_ctx);
 	mipi_dsi_msleep(&dsi_ctx, 100);
 	mipi_dsi_dcs_enter_sleep_mode_multi(&dsi_ctx);

@@ -107,20 +107,10 @@ static int pele_jdi_r69429_on(struct pele_jdi_r69429 *ctx)
 	mipi_dsi_dcs_set_display_brightness_multi(&dsi_ctx, 0x00);
 	mipi_dsi_dcs_write_seq_multi(&dsi_ctx, MIPI_DCS_WRITE_CONTROL_DISPLAY,
 				     0x24);
+	mipi_dsi_dcs_write_seq_multi(&dsi_ctx, MIPI_DCS_WRITE_POWER_SAVE, 0x00);
 	mipi_dsi_dcs_write_seq_multi(&dsi_ctx, MIPI_DCS_SET_CABC_MIN_BRIGHTNESS,
 				     0x06);
-	mipi_dsi_dcs_write_seq_multi(&dsi_ctx, MIPI_DCS_WRITE_POWER_SAVE, 0x01);
 
-	return dsi_ctx.accum_err;
-}
-
-static int pele_jdi_r69429_panel_on(struct pele_jdi_r69429 *ctx)
-{
-	struct mipi_dsi_multi_context dsi_ctx = { .dsi = ctx->dsi };
-
-	ctx->dsi->mode_flags |= MIPI_DSI_MODE_LPM;
-
-	mipi_dsi_dcs_write_seq_multi(&dsi_ctx, MIPI_DCS_WRITE_POWER_SAVE, 0x01);
 	mipi_dsi_dcs_exit_sleep_mode_multi(&dsi_ctx);
 	mipi_dsi_msleep(&dsi_ctx, 120);
 	mipi_dsi_dcs_set_display_on_multi(&dsi_ctx);
@@ -175,15 +165,15 @@ static int pele_jdi_r69429_prepare(struct drm_panel *panel)
 
 	return 0;
 }
-
+/*
 static int pele_jdi_r69429_enable(struct drm_panel *panel)
 {
 	struct pele_jdi_r69429 *ctx = to_pele_jdi_r69429(panel);
 	struct device *dev = &ctx->dsi->dev;
 	int ret;
 
-	/*gpiod_set_value(ctx->vled_gpio, 1);
-	usleep_range(5000, 6000);*/
+	gpiod_set_value(ctx->vled_gpio, 1);
+	usleep_range(5000, 6000)
 
 	ret = pele_jdi_r69429_panel_on(ctx);
 	if (ret < 0) {
@@ -194,8 +184,8 @@ static int pele_jdi_r69429_enable(struct drm_panel *panel)
 	}
 
 	return 0;
-}
-
+};*/
+/*
 static int pele_jdi_r69429_disable(struct drm_panel *panel)
 {
 	struct pele_jdi_r69429 *ctx = to_pele_jdi_r69429(panel);
@@ -206,16 +196,17 @@ static int pele_jdi_r69429_disable(struct drm_panel *panel)
 	if (ret < 0)
 		dev_err(dev, "Failed to un-initialize panel: %d\n", ret);
 
-	/*gpiod_set_value(ctx->vled_gpio, 0);
-	usleep_range(5000, 6000);*/
+	gpiod_set_value(ctx->vled_gpio, 0);
+	usleep_range(5000, 6000);
 
 	return 0;
 }
-
+*/
 static int pele_jdi_r69429_unprepare(struct drm_panel *panel)
 {
 	struct pele_jdi_r69429 *ctx = to_pele_jdi_r69429(panel);
 
+	pele_jdi_r69429_off(ctx);
 	gpiod_set_value_cansleep(ctx->reset_gpio, 1);
 
 //	pele_jdi_r69429_power(ctx,0);
@@ -248,8 +239,8 @@ static int pele_jdi_r69429_get_modes(struct drm_panel *panel,
 
 static const struct drm_panel_funcs pele_jdi_r69429_panel_funcs = {
 	.prepare = pele_jdi_r69429_prepare,
-	.enable = pele_jdi_r69429_enable,
-	.disable = pele_jdi_r69429_disable,
+	//.enable = pele_jdi_r69429_enable,
+	//.disable = pele_jdi_r69429_disable,
 	.unprepare = pele_jdi_r69429_unprepare,
 	.get_modes = pele_jdi_r69429_get_modes,
 };

@@ -290,7 +290,7 @@
 		regulator-name = "lcd-vled";
 		gpio = <&tlmm 97 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
-		regulator-boot-on;
+		//regulator-boot-on;
 	};
 
 	otg_path: otg_path {
@@ -563,16 +563,20 @@
 	/* cam therm */
 	channel@11 {
 		reg = <VADC_P_MUX2_1_1>;
+		qcom,decimation = <512>;
 		qcom,pre-scaling = <1 1>;
 		qcom,hw-settle-time = <200>;
+		qcom,avg-samples = <1>;
 		label = "mpp2_div1";
 	};
 
 	/* cpu therm */
 	channel@13 {
 		reg = <VADC_P_MUX4_1_1>;
+		qcom,decimation = <512>;
 		qcom,pre-scaling = <1 1>;
 		qcom,hw-settle-time = <200>;
+		qcom,avg-samples = <1>;
 		label = "mpp4_div1";
 	};
 
@@ -894,8 +898,8 @@
 	// #address-cells = <1>;
 	//#size-cells = <0>;
 
-		io-channels = <&pm8916_vadc 0x6>, <&pm8916_vadc 0x30>, <&pm8916_vadc 0x11>;
-		io-channel-names = "voltage", "temperature", "power";
+		io-channels = <&pm8916_vadc 0x6>, <&pm8916_vadc 0x11>, <&pm8916_vadc 0x30>;
+		io-channel-names = "voltage","current","temperature";
 
 		//charged-gpios = <&tlmm 62>;
 		monitored-battery = <&battery>;
