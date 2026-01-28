@@ -146,91 +146,65 @@
 		};
 	};
 
+	reg_lcd_vdd: regulator-lcd-vdd {
+		compatible = "regulator-fixed";
+		regulator-name = "lcd-vdd";
+
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		regulator-boot-on;
+		gpio = <&tlmm 3 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+
+		pinctrl-0 = <&lcd_vdd_default>;
+		pinctrl-names = "default";
+	};
+
 	reg_lcd_vddio: regulator-lcd-vddio {
 		compatible = "regulator-fixed";
-		regulator-name = "vddio-incell";
+		regulator-name = "lcd-vddio";
+
 		vin-supply = <&pm8916_l16>;
 		regulator-min-microvolt = <1800000>;
 		regulator-max-microvolt = <1800000>;
-		regulator-always-on;
 		regulator-boot-on;
-	};
+		gpio = <&tlmm 2 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
 
+		pinctrl-0 = <&lcd_vddio_default>;
+		pinctrl-names = "default";
+	};
+	
 	reg_lcd_vsp: regulator-lcd-vsp {
 		compatible = "regulator-fixed";
 		regulator-name = "vsp";
+
 		regulator-min-microvolt = <5400000>;
 		regulator-max-microvolt = <5400000>;
-		regulator-always-on;
 		regulator-boot-on; // allows fb console to show up briefly at boot without always-on
-		enable-active-high;
 
-		/*gpios = <&tlmm 97 GPIO_ACTIVE_HIGH>;
+		gpios = <&tlmm 97 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
-		startup-delay-us = <200000>; //delay 200
+		//startup-delay-us = <200000>; //delay 200
+
 		pinctrl-names = "default";
-		pinctrl-0 = <&lcd_vsp_default>;*/
+		pinctrl-0 = <&lcd_vsp_default>;
 	};
 
 	reg_lcd_vsn: regulator-lcd-vsn {
 		compatible = "regulator-fixed";
-		regulator-name = "vsn";
+		regulator-name = "lcd vsn";
+		
 		regulator-min-microvolt = <5400000>;
 		regulator-max-microvolt = <5400000>;
-		regulator-always-on;
 		regulator-boot-on; // allows fb console to show up briefly at boot without always-on
-		enable-active-high;
 
-	/*	gpios = <&tlmm 32 GPIO_ACTIVE_HIGH>;
+		gpios = <&tlmm 32 GPIO_ACTIVE_HIGH>;
 		//startup-delay-us = <200000>; //delay 200
 		enable-active-high;
+
 		pinctrl-names = "default";
-		pinctrl-0 = <&lcd_vsn_default>;*/
-	};
-
-	reg_lcd_vsp_gpio: gpio-regulator@97 {
-		compatible = "regulator-fixed";
-		regulator-name = "vsp-gpio";
-		gpio = <&tlmm 97 GPIO_ACTIVE_HIGH>;
-		regulator-always-on;
-		regulator-boot-on;
-		enable-active-high;
-	};
-
-	reg_lcd_vsn_gpio: gpio-regulator@32 {
-		compatible = "regulator-fixed";
-		regulator-name = "vsn-gpio";
-		gpio = <&tlmm 32 GPIO_ACTIVE_HIGH>;
-		regulator-always-on;
-		regulator-boot-on;
-		enable-active-high;
-	};
-
-	reg_lcd_vcc_gpio: gpio-regulator@2 {
-		compatible = "regulator-fixed";
-		regulator-name = "vcc-gpio";
-		gpio = <&tlmm 2 GPIO_ACTIVE_HIGH>;
-		regulator-always-on;
-		regulator-boot-on;
-		enable-active-high;
-	};
-
-	reg_lcd_backlight_gpio: gpio-regulator@3 {
-		compatible = "regulator-fixed";
-		regulator-name = "backlight--gpio";
-		gpio = <&tlmm 3 GPIO_ACTIVE_HIGH>;
-		regulator-always-on;
-		regulator-boot-on;
-		enable-active-high;
-	};
-
-	reg_lcd_vled_gpio: gpio-regulator@109 {
-		compatible = "regulator-fixed";
-		regulator-name = "vled--gpio";
-		gpio = <&tlmm 109 GPIO_ACTIVE_HIGH>;
-		regulator-always-on;
-		regulator-boot-on;
-		enable-active-high;
+		pinctrl-0 = <&lcd_vsn_default>;
 	};
 
 	reg_tp_vci: gpio-regulator@112 {
@@ -270,9 +244,9 @@
 		vdd-supply = <&pm8916_l17>;
 		vddio-supply = <&pm8916_l6>;
 
-		mount-matrix = "0", "1", "0",
-			      		       "-1", "0", "0",
-			       		       "0", "0", "1";
+		mount-matrix = "-1", "0", "0",
+			       "0", "1", "0",
+			       "0", "0", "1";
 
 		pinctrl-0 = <&accel_int_default>;
 		pinctrl-names = "default";
@@ -362,14 +336,18 @@
 		reset-gpios = <&tlmm 25 GPIO_ACTIVE_LOW>;
 		disp-te-gpios = <&tlmm 24 GPIO_ACTIVE_HIGH>;
 
-		vci-supply = <&pm8916_l16>;
+		power-supply = <&reg_lcd_vddio>;
 		vsp-supply = <&reg_lcd_vsp>;
 		vsn-supply = <&reg_lcd_vsn>;
-		vsp-gpio-supply = <&reg_lcd_vsp_gpio>;
-		vsn-gpio-supply = <&reg_lcd_vsn_gpio>;
-		vcc-gpio-supply = <&reg_lcd_vcc_gpio>;
-		backlight-gpio-supply = <&reg_lcd_backlight_gpio>;
-		vled-gpio-supply = <&reg_lcd_vled_gpio>;
+		bl-supply = <&reg_lcd_vdd>;
+
+		vled-gpios = <&tlmm 109 GPIO_ACTIVE_HIGH>;
+
+		//vsp-gpio-supply = <&reg_lcd_vsp_gpio>;
+		//vsn-gpio-supply = <&reg_lcd_vsn_gpio>;
+		//vcc-gpio-supply = <&reg_lcd_vcc_gpio>;
+		//backlight-gpio-supply = <&reg_lcd_backlight_gpio>;
+		//vled-gpio-supply = <&reg_lcd_vled_gpio>;
 
 		/*vsp-gpios = <&tlmm 97 GPIO_ACTIVE_HIGH>;
 		vsn-gpios = <&tlmm 32 GPIO_ACTIVE_HIGH>;
@@ -661,6 +639,42 @@
 		function = "gpio";
 		drive-strength = <2>;
 		bias-disable;
+	};
+
+	lcd_vdd_default: lcd-vdd-default-state {
+		pins = "gpio3";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-pull-up;
+		output-high;
+	};
+
+	lcd_vddio_default: lcd-vddio-default-state {
+		pins = "gpio2";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-pull-up;
+		output-high;
+	};
+
+	lcd_vsp_default: lcd-vsp-default-state {
+		pins = "gpio97";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-pull-up;
+		output-high;
+	};
+
+	lcd_vsn_default: lcd-vsn-default-state {
+		pins = "gpio32";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-pull-up;
+		output-high;
 	};
 
 	mag_reset_default: mag-reset-default-state {

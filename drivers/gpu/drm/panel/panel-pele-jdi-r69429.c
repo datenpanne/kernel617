@@ -25,19 +25,19 @@ struct pele_jdi_r69429 {
 	/*struct gpio_desc *vsn_gpio;
 	struct gpio_desc *vsp_gpio;
 	struct gpio_desc *blen_gpio;
-	struct gpio_desc *vcc_gpio;
-	struct gpio_desc *vled_gpio;*/
+	struct gpio_desc *vcc_gpio;*/
+	struct gpio_desc *vled_gpio;
 };
 
 static const struct regulator_bulk_data pele_jdi_r69429_supplies[] = {
-	{ .supply = "vci" },
+	{ .supply = "power" },
 	{ .supply = "vsp" },
 	{ .supply = "vsn" },
-	{ .supply = "vsp-gpio" },
-	{ .supply = "vsn-gpio" },
-	{ .supply = "vcc-gpio" },
-	{ .supply = "backlight-gpio" },
-	{ .supply = "vled-gpio" },
+	//{ .supply = "vsp-gpio" },
+	//{ .supply = "vsn-gpio" },
+	//{ .supply = "vcc-gpio" },
+	//{ .supply = "backlight-gpio" },
+	//{ .supply = "vled-gpio" },
 };
 
 static inline
@@ -75,6 +75,7 @@ static int pele_jdi_r69429_on(struct pele_jdi_r69429 *ctx)
 	struct mipi_dsi_multi_context dsi_ctx = { .dsi = ctx->dsi };
 
 	ctx->dsi->mode_flags |= MIPI_DSI_MODE_LPM;
+	mipi_dsi_msleep(&dsi_ctx, 40);
 
 	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0xb0, 0x00);
 	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0xb3,
@@ -135,6 +136,7 @@ static int pele_jdi_r69429_off(struct pele_jdi_r69429 *ctx)
 static int pele_jdi_r69429_prepare(struct drm_panel *panel)
 {
 	struct pele_jdi_r69429 *ctx = to_pele_jdi_r69429(panel);
+	struct mipi_dsi_multi_context dsi_ctx = { .dsi = ctx->dsi };
 	struct device *dev = &ctx->dsi->dev;
 	int ret;
 
@@ -151,7 +153,7 @@ static int pele_jdi_r69429_prepare(struct drm_panel *panel)
 		if (ret < 0) {
 			dev_err(dev, "Failed to send NOP: %d\n", ret);
 	}
-	usleep_range(1000, 2000);
+	mipi_dsi_msleep(&dsi_ctx, 80);
 
 	pele_jdi_r69429_reset(ctx);
 
@@ -343,12 +345,12 @@ static int pele_jdi_r69429_probe(struct mipi_dsi_device *dsi)
 	ctx->vsn_gpio = devm_gpiod_get(dev, "vsn", GPIOD_OUT_LOW);
 	if (IS_ERR(ctx->vsn_gpio))
 		return dev_err_probe(dev, PTR_ERR(ctx->vsn_gpio),
-				     "Failed to get vsn-gpios\n");
+				     "Failed to get vsn-gpios\n");*/
 
 	ctx->vled_gpio = devm_gpiod_get(dev, "vled", GPIOD_OUT_HIGH);
 	if (IS_ERR(ctx->vled_gpio))
 		return dev_err_probe(dev, PTR_ERR(ctx->vled_gpio),
-				     "Failed to get vled-gpios\n");*/
+				     "Failed to get vled-gpios\n");
 
 	ctx->dsi = dsi;
 	mipi_dsi_set_drvdata(dsi, ctx);

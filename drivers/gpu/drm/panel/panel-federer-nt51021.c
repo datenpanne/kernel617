@@ -21,11 +21,11 @@ struct huawei_nt51021 {
 //	struct regulator_bulk_data *supplies;
 	struct gpio_desc *reset_gpio;
 //	struct gpio_desc *vcc_pwr_gpio;
-//	struct gpio_desc *bl_pwr_gpio;
+	struct gpio_desc *bl_en_gpio;
 	//struct gpio_desc *vled_en_gpio;
 
 	struct regulator *power;
-	struct regulator *vcc;
+	//struct regulator *vcc;
 	struct regulator *vddio;
 	struct regulator *vsp;
 	struct regulator *vsn;
@@ -90,6 +90,13 @@ static int huawei_nt51021_on(struct huawei_nt51021 *ctx)
 	mipi_dsi_msleep(&dsi_ctx, 30);
 	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x8f, 0xa5);
 	mipi_dsi_usleep_range(&dsi_ctx, 1000, 2000);
+	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x83, 0x00);
+	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x84, 0x00);
+	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x8c, 0x80);
+	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0xcd, 0x6c);
+	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0xc8, 0xfc);
+	mipi_dsi_generic_write_seq_multi(&dsi_ctx, HUAWEI_NT51021_BRIGHTNESS, 0x00);
+	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x97, 0x00);
 	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x83, 0xbb);
 	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x84, 0x22);
 	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x96, 0x00);
@@ -111,13 +118,6 @@ static int huawei_nt51021_on(struct huawei_nt51021 *ctx)
 	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0xb4, 0x1c);
 	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0xb5, 0x38);
 	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0xb6, 0x30);
-	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x83, 0x00);
-	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x84, 0x00);
-	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x8c, 0x80);
-	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0xcd, 0x6c);
-	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0xc8, 0xfc);
-	mipi_dsi_generic_write_seq_multi(&dsi_ctx, HUAWEI_NT51021_BRIGHTNESS, 0x00);
-	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x97, 0x00);
 	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x83, 0xaa);
 	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x84, 0x11);
 	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0xa9, 0x4b);
@@ -164,7 +164,11 @@ static int huawei_nt51021_prepare(struct drm_panel *panel)
 		dev_err(dev, "Failed to enable VDDIO regulator: %d\n", ret);
 		return ret;
 	}
-
+	//msleep(50);
+	
+	gpiod_direction_output(ctx->bl_en_gpio, 1);
+	msleep(50);
+	
 	ret = regulator_enable(ctx->vsp);
 	if (ret < 0) {
 		dev_err(dev, "Failed to enable VSP regulator: %d\n", ret);
@@ -177,29 +181,30 @@ static int huawei_nt51021_prepare(struct drm_panel *panel)
 		dev_err(dev, "Failed to enable VSN regulator: %d\n", ret);
 		return ret;
 	}
+	usleep_range(5000,6000);
 
-	ret = regulator_enable(ctx->vcc);
+	/*ret = regulator_enable(ctx->vcc);
 	if (ret < 0) {
 		dev_err(dev, "Failed to enable vcc regulator: %d\n", ret);
 		return ret;
 	}
-	msleep(500);
+	msleep(500);*/
 
 	ret = regulator_enable(ctx->power);
 	if (ret < 0) {
-		dev_err(dev, "Failed to enable vcc regulator: %d\n", ret);
+		dev_err(dev, "Failed to enable vdd regulator: %d\n", ret);
 		return ret;
 	}
-	msleep(50);
+	msleep(300);
 
 	ret = mipi_dsi_dcs_nop(ctx->dsi);
 		if (ret < 0) {
 			dev_err(dev, "Failed to send NOP: %d\n", ret);
 	}
-	mipi_dsi_msleep(&dsi_ctx, 80);
 
 	huawei_nt51021_reset(ctx);
-
+	mipi_dsi_msleep(&dsi_ctx, 80);
+	
 	ret = huawei_nt51021_on(ctx);
 	if (ret < 0) {
 		dev_err(dev, "Failed to initialize panel: %d\n", ret);
@@ -221,7 +226,7 @@ regdsb:
 	gpiod_set_value_cansleep(ctx->reset_gpio, 1);
 	regulator_disable(ctx->vddio);
 	regulator_disable(ctx->power);
-	regulator_disable(ctx->vcc);
+	//regulator_disable(ctx->vcc);
 	return ret;
 }
 
@@ -257,7 +262,7 @@ static int huawei_nt51021_unprepare(struct drm_panel *panel)
 	gpiod_set_value_cansleep(ctx->reset_gpio, 1);
 	regulator_disable(ctx->vddio);
 	regulator_disable(ctx->power);
-	regulator_disable(ctx->vcc);
+	//regulator_disable(ctx->vcc);
 
 	return 0;
 }
@@ -419,10 +424,10 @@ static int huawei_nt51021_probe(struct mipi_dsi_device *dsi)
 		return dev_err_probe(dev, PTR_ERR(ctx->power),
 				     "Failed to get power regulator\n");
 
-	ctx->vcc = devm_regulator_get(dev, "vcc");
+	/*ctx->vcc = devm_regulator_get(dev, "vcc");
 	if (IS_ERR(ctx->vcc))
 		return dev_err_probe(dev, PTR_ERR(ctx->vcc),
-				     "Failed to get vcc regulator\n");
+				     "Failed to get vcc regulator\n");*/
 
 	ctx->vddio = devm_regulator_get(dev, "vddio");
 	if (IS_ERR(ctx->vddio))
@@ -449,10 +454,10 @@ static int huawei_nt51021_probe(struct mipi_dsi_device *dsi)
 		return dev_err_probe(dev, PTR_ERR(ctx->reset_gpio),
 				     "Failed to get reset-gpios\n");
 
-/*	ctx->vled_en_gpio = devm_gpiod_get(dev, "backlight", GPIOD_OUT_HIGH);
-	if (IS_ERR(ctx->vled_en_gpio))
-		return dev_err_probe(dev, PTR_ERR(ctx->vled_en_gpio),
-				     "Failed to get backlight-gpios\n");*/
+	ctx->bl_en_gpio = devm_gpiod_get(dev, "backlight", GPIOD_OUT_HIGH);
+	if (IS_ERR(ctx->bl_en_gpio))
+		return dev_err_probe(dev, PTR_ERR(ctx->bl_en_gpio),
+				     "Failed to get backlight-gpios\n");
 
 	ctx->dsi = dsi;
 	mipi_dsi_set_drvdata(dsi, ctx);
