@@ -18,29 +18,19 @@
 struct huawei_nt51021 {
 	struct drm_panel panel;
 	struct mipi_dsi_device *dsi;
-//	struct regulator_bulk_data *supplies;
 	struct gpio_desc *reset_gpio;
-//	struct gpio_desc *vcc_pwr_gpio;
 	struct gpio_desc *bl_en_gpio;
-	//struct gpio_desc *vled_en_gpio;
 
 	struct regulator *power;
-	//struct regulator *vcc;
-	struct regulator *vddio;
+	//struct regulator *vddio;
 	struct regulator *vsp;
 	struct regulator *vsn;
 	struct regulator *vled;
 
-	int hw_led_en_flag; //taken from original source
+	int hw_led_en_flag; //from original source
 };
 
 #define HUAWEI_NT51021_BRIGHTNESS 0x9f
-
-/*static const struct regulator_bulk_data huawei_nt51021_supplies[] = {
-	{ .supply = "vddio" },
-	{ .supply = "vsp" },
-	{ .supply = "vsn" },
-};*/
 
 static inline
 struct huawei_nt51021 *to_huawei_nt51021(struct drm_panel *panel)
@@ -58,17 +48,8 @@ static void huawei_nt51021_reset(struct huawei_nt51021 *ctx)
 	msleep(30);
 }
 
-/*static void huawei_nt51021_gpio_power(struct huawei_nt51021 *ctx, int enable)
-{
-	gpiod_direction_output(ctx->bl_pwr_gpio, enable);
-	msleep(50);
-	gpiod_direction_output(ctx->vcc_pwr_gpio, enable);
-	msleep(500);
-}*/
-
 static void huawei_nt51021_gpio_vled(struct huawei_nt51021 *ctx, int enable)
 {
-	//gpiod_set_value(ctx->vled_en_gpio, enable);
 	if (enable) {
 		regulator_enable(ctx->vled);
 		ctx->hw_led_en_flag = 1;
@@ -159,75 +140,52 @@ static int huawei_nt51021_prepare(struct drm_panel *panel)
 	struct device *dev = &ctx->dsi->dev;
 	int ret;
 
+	/*// 1. Digitale Logik-Spannung (VCC/VDDIO)
 	ret = regulator_enable(ctx->vddio);
-	if (ret < 0) {
-		dev_err(dev, "Failed to enable VDDIO regulator: %d\n", ret);
-		return ret;
-	}
-	//msleep(50);
-	
-	gpiod_direction_output(ctx->bl_en_gpio, 1);
-	msleep(50);
-	
-	ret = regulator_enable(ctx->vsp);
-	if (ret < 0) {
-		dev_err(dev, "Failed to enable VSP regulator: %d\n", ret);
-		return ret;
-	}
-	usleep_range(5000,6000);
+	if (ret < 0) return ret;
+	msleep(20);*/
 
+	// 2. Panel-Power (oft die 3.3V Schiene)
+	ret = regulator_enable(ctx->power);
+	if (ret < 0) goto ret;
+	msleep(10);
+
+	// 3. Analoge Spannungen für die Source-Driver
+	ret = regulator_enable(ctx->vsp);
+	if (ret < 0) goto err_power;
 	ret = regulator_enable(ctx->vsn);
 	if (ret < 0) {
-		dev_err(dev, "Failed to enable VSN regulator: %d\n", ret);
-		return ret;
+		regulator_disable(ctx->vsp);
+		goto err_power;
 	}
-	usleep_range(5000,6000);
+	msleep(20);
 
-	/*ret = regulator_enable(ctx->vcc);
-	if (ret < 0) {
-		dev_err(dev, "Failed to enable vcc regulator: %d\n", ret);
-		return ret;
-	}
-	msleep(500);*/
+	// 4. Reset-Zyklus: Aktivieren -> Warten -> Deaktivieren
+	// Annahme: Active Low (0 = Reset aktiv). 
+	// Da wir mit GPIOD_OUT_HIGH proben, ist '1' in der Software = Hardware Reset Pin LOW.
+	gpiod_set_value_cansleep(ctx->reset_gpio, 1); 
+	usleep_range(10000, 15000);
+	gpiod_set_value_cansleep(ctx->reset_gpio, 0); // Reset verlassen
+	msleep(20);
 
-	ret = regulator_enable(ctx->power);
-	if (ret < 0) {
-		dev_err(dev, "Failed to enable vdd regulator: %d\n", ret);
-		return ret;
-	}
-	msleep(300);
-
-	ret = mipi_dsi_dcs_nop(ctx->dsi);
-		if (ret < 0) {
-			dev_err(dev, "Failed to send NOP: %d\n", ret);
-	}
-
-	huawei_nt51021_reset(ctx);
-	mipi_dsi_msleep(&dsi_ctx, 80);
-	
+	// 5. Initialisierungs-Register senden (LP Mode)
 	ret = huawei_nt51021_on(ctx);
 	if (ret < 0) {
-		dev_err(dev, "Failed to initialize panel: %d\n", ret);
-		gpiod_set_value_cansleep(ctx->reset_gpio, 1);
-		goto regdsb;
+		dev_err(dev, "Failed to send init sequence: %d\n", ret);
+		goto err_vsn;
 	}
-
-	//huawei_nt51021_gpio_vled(ctx,1);
-	//msleep(100);
-	mipi_dsi_dcs_set_display_on_multi(&dsi_ctx);
-	mipi_dsi_msleep(&dsi_ctx, 80);
 
 	return 0;
 
-regdsb:
+err_vsn:
 	regulator_disable(ctx->vsn);
 	regulator_disable(ctx->vsp);
-	usleep_range(5000, 7000);
-	gpiod_set_value_cansleep(ctx->reset_gpio, 1);
-	regulator_disable(ctx->vddio);
+err_power:
 	regulator_disable(ctx->power);
-	//regulator_disable(ctx->vcc);
 	return ret;
+/*err_vddio:
+	regulator_disable(ctx->vddio);
+	return ret;*/
 }
 
 static int huawei_nt51021_enable(struct drm_panel *panel)
@@ -235,34 +193,41 @@ static int huawei_nt51021_enable(struct drm_panel *panel)
 	struct huawei_nt51021 *ctx = to_huawei_nt51021(panel);
 	struct mipi_dsi_multi_context dsi_ctx = { .dsi = ctx->dsi };
 
-	huawei_nt51021_gpio_vled(ctx,1);
-	msleep(100);
+	// 1. Backlight-Enable GPIO (Hardware-Schalter für den Treiber)
+	gpiod_set_value_cansleep(ctx->bl_en_gpio, 1);
 
+	// 2. VLED Regulator (Die Hochspannung für die LEDs)
+	huawei_nt51021_gpio_vled(ctx, 1);
+	msleep(50);
+
+	// 3. Display aus dem Sleep holen und Bild anzeigen
+	mipi_dsi_dcs_exit_sleep_mode_multi(&dsi_ctx);
+	msleep(150); // Notwendig nach Sleep Exit
 	mipi_dsi_dcs_set_display_on_multi(&dsi_ctx);
-	mipi_dsi_msleep(&dsi_ctx, 80);
 
-	msleep(30);
-
-	return 0;
+	return dsi_ctx.accum_err;
 }
 
 static int huawei_nt51021_unprepare(struct drm_panel *panel)
 {
 	struct huawei_nt51021 *ctx = to_huawei_nt51021(panel);
-	struct device *dev = &ctx->dsi->dev;
-	int ret;
 
-	ret = huawei_nt51021_off(ctx);
-	if (ret < 0)
-		dev_err(dev, "Failed to un-initialize panel: %d\n", ret);
-
-	regulator_disable(ctx->vsp);
-	regulator_disable(ctx->vsn);
-	usleep_range(5000, 7000);
+	// 1. Reset wieder aktivieren (Pin auf Low ziehen)
+	// Software '1' -> Hardware Reset Pin LOW bei GPIOD_OUT_HIGH
 	gpiod_set_value_cansleep(ctx->reset_gpio, 1);
-	regulator_disable(ctx->vddio);
+	msleep(20);
+
+	// 2. Analoge Spannungen (Source Driver) zuerst entladen
+	regulator_disable(ctx->vsn);
+	regulator_disable(ctx->vsp);
+	msleep(20);
+
+	// 3. Haupt-Power abschalten
 	regulator_disable(ctx->power);
-	//regulator_disable(ctx->vcc);
+	msleep(10);
+
+	// 4. Digitale Logik (VDDIO) zuletzt trennen
+	//regulator_disable(ctx->vddio);
 
 	return 0;
 }
@@ -270,17 +235,22 @@ static int huawei_nt51021_unprepare(struct drm_panel *panel)
 static int huawei_nt51021_disable(struct drm_panel *panel)
 {
 	struct huawei_nt51021 *ctx = to_huawei_nt51021(panel);
-	struct device *dev = &ctx->dsi->dev;
-	int ret;
+	struct mipi_dsi_multi_context dsi_ctx = { .dsi = ctx->dsi };
 
-	ret = huawei_nt51021_off(ctx);
-	if (ret < 0)
-		dev_err(dev, "Failed to un-initialize panel: %d\n", ret);
+	// 1. Backlight zuerst aus, um Artefakte beim Abschalten zu verbergen
+	huawei_nt51021_gpio_vled(ctx, 0);
+	gpiod_set_value_cansleep(ctx->bl_en_gpio, 0);
+	msleep(20);
 
-	huawei_nt51021_gpio_vled(ctx,0);
-	msleep(200);
+	// 2. Display-Aus Befehl und Sleep-Modus
+	mipi_dsi_dcs_set_display_off_multi(&dsi_ctx);
+	msleep(20);
+	mipi_dsi_dcs_enter_sleep_mode_multi(&dsi_ctx);
+	
+	// Dem Panel Zeit geben, den internen Status zu speichern (DCS Standard: 120ms)
+	msleep(120);
 
-	return 0;
+	return dsi_ctx.accum_err;
 }
 
 static const struct drm_display_mode huawei_nt51021_mode = {
@@ -312,44 +282,24 @@ static const struct drm_panel_funcs huawei_nt51021_panel_funcs = {
 	.get_modes = huawei_nt51021_get_modes,
 };
 
-static int huawei_nt51021_set_brightness(struct mipi_dsi_device *dsi,
-					u16 brightness)
+static int huawei_nt51021_set_brightness(struct mipi_dsi_device *dsi, u16 brightness)
 {
-	const u8 chang_page0_index0[2] = {0x83, 0x00};
-	const u8 chang_page0_index1[2] = {0x84, 0x00};
-	u8 payload[2] = { brightness & 0xff, brightness >> 8 };
-	int ret;
+    u8 b_val = (u8)brightness; // Nur das untere Byte nutzen (0-255)
+    int ret;
 
-	mipi_dsi_dcs_write_buffer(dsi, chang_page0_index0,
-					ARRAY_SIZE(chang_page0_index0));
+    // Zurück auf Page 0 schalten
+    mipi_dsi_dcs_write_seq(dsi, 0x83, 0x00);
+    mipi_dsi_dcs_write_seq(dsi, 0x84, 0x00);
 
-	mipi_dsi_dcs_write_buffer(dsi, chang_page0_index1,
-					ARRAY_SIZE(chang_page0_index1));
+    // Brightness schreiben
+    ret = mipi_dsi_dcs_write(dsi, HUAWEI_NT51021_BRIGHTNESS, &b_val, 1);
+    
+    // Optional: Zurück auf die "Standard-Page" (aa, 11) schalten, falls nötig
+     mipi_dsi_dcs_write_seq(dsi, 0x83, 0xaa);
+     mipi_dsi_dcs_write_seq(dsi, 0x84, 0x11);
 
-	//mipi_dsi_generic_write_seq_multi(&dsi_ctx, HUAWEI_NT51021_BRIGHTNESS,  payload, sizeof(payload));
-	ret = mipi_dsi_dcs_write(dsi, HUAWEI_NT51021_BRIGHTNESS,
-				 payload, sizeof(payload));
-	if (ret < 0)
-		return ret;
-
-	return 0;
+    return ret;
 }
-/*
-static int huawei_nt51021_get_brightness(struct mipi_dsi_device *dsi,
-					u16 *brightness)
-{
-	int ret;
-
-	ret = mipi_dsi_dcs_read(dsi, HUAWEI_NT51021_BRIGHTNESS,
-				brightness, sizeof(*brightness));
-	if (ret <= 0) {
-		if (ret == 0)
-			ret = -ENODATA;
-
-		return ret;
-	}
-	return 0;
-}*/
 
 static int huawei_nt51021_bl_update_status(struct backlight_device *bl)
 {
@@ -359,36 +309,13 @@ static int huawei_nt51021_bl_update_status(struct backlight_device *bl)
 	u16 brightness = backlight_get_brightness(bl);
 	int ret;
 
-	/*gpiod_set_value_cansleep(ctx->vled_en_gpio, !!brightness);
-	mipi_dsi_msleep(&dsi_ctx, 200);*/
-
-	dsi->mode_flags &= ~MIPI_DSI_MODE_LPM;
-
 	ret = huawei_nt51021_set_brightness(dsi, brightness);
-	//ret = mipi_dsi_dcs_write(dsi, HUAWEI_NT51021_BRIGHTNESS, &brightness, 1);
-	dsi->mode_flags |= MIPI_DSI_MODE_LPM;
+
 	if (ret < 0)
 		return ret;
 
 	return 0;
 }
-/*
-static int huawei_nt51021_bl_get_brightness(struct backlight_device *bl)
-{
-	struct mipi_dsi_device *dsi = bl_get_data(bl);
-	u16 brightness;
-	int ret;
-
-	dsi->mode_flags &= ~MIPI_DSI_MODE_LPM;
-
-	ret = huawei_nt51021_get_brightness(dsi, &brightness);
-	if (ret < 0)
-		return ret;
-
-	dsi->mode_flags |= MIPI_DSI_MODE_LPM;
-
-	return brightness & 0xff;
-}*/
 
 static const struct backlight_ops huawei_nt51021_bl_ops = {
 	.update_status = huawei_nt51021_bl_update_status,
@@ -424,15 +351,10 @@ static int huawei_nt51021_probe(struct mipi_dsi_device *dsi)
 		return dev_err_probe(dev, PTR_ERR(ctx->power),
 				     "Failed to get power regulator\n");
 
-	/*ctx->vcc = devm_regulator_get(dev, "vcc");
-	if (IS_ERR(ctx->vcc))
-		return dev_err_probe(dev, PTR_ERR(ctx->vcc),
-				     "Failed to get vcc regulator\n");*/
-
-	ctx->vddio = devm_regulator_get(dev, "vddio");
+	/*ctx->vddio = devm_regulator_get(dev, "vddio");
 	if (IS_ERR(ctx->vddio))
 		return dev_err_probe(dev, PTR_ERR(ctx->vddio),
-				     "Failed to get vddio regulator\n");
+				     "Failed to get vddio regulator\n");*/
 
 	ctx->vsp = devm_regulator_get(dev, "vsp");
 	if (IS_ERR(ctx->vsp))
@@ -521,3 +443,4 @@ module_mipi_dsi_driver(huawei_nt51021_driver);
 MODULE_AUTHOR("linux-mdss-dsi-panel-driver-generator <fix@me>"); // FIXME
 MODULE_DESCRIPTION("DRM driver for BOE_NT51021_10_1200P_VIDEO");
 MODULE_LICENSE("GPL");
+
