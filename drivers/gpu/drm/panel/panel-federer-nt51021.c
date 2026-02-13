@@ -38,25 +38,23 @@ struct huawei_nt51021 *to_huawei_nt51021(struct drm_panel *panel)
 	return container_of(panel, struct huawei_nt51021, panel);
 }
 
-static void huawei_nt51021_reset(struct huawei_nt51021 *ctx)
+static int huawei_nt51021_gpio_vled(struct huawei_nt51021 *ctx, int enable)
 {
-	gpiod_set_value_cansleep(ctx->reset_gpio, 0);
-	usleep_range(1000, 2000);
-	gpiod_set_value_cansleep(ctx->reset_gpio, 1);
-	msleep(20);
-	gpiod_set_value_cansleep(ctx->reset_gpio, 0);
-	msleep(30);
-}
+	int ret;
 
-static void huawei_nt51021_gpio_vled(struct huawei_nt51021 *ctx, int enable)
-{
 	if (enable) {
-		regulator_enable(ctx->vled);
+		ret = regulator_enable(ctx->vled);
+		if (ret < 0) {
+			dev_err(&ctx->dsi->dev, "Failed to enable VLED regulator: %d\n", ret);
+			return ret;
+		}
 		ctx->hw_led_en_flag = 1;
 	} else {
 		regulator_disable(ctx->vled);
 		ctx->hw_led_en_flag = 0;
 	}
+
+	return 0;
 }
 
 static int huawei_nt51021_on(struct huawei_nt51021 *ctx)
@@ -113,30 +111,9 @@ static int huawei_nt51021_on(struct huawei_nt51021 *ctx)
 	return dsi_ctx.accum_err;
 }
 
-static int huawei_nt51021_off(struct huawei_nt51021 *ctx)
-{
-	struct mipi_dsi_multi_context dsi_ctx = { .dsi = ctx->dsi };
-
-	ctx->dsi->mode_flags &= ~MIPI_DSI_MODE_LPM;
-
-	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x8f, 0xa5);
-	mipi_dsi_msleep(&dsi_ctx, 20);
-	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x83, 0x00);
-	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x84, 0x00);
-	mipi_dsi_dcs_set_display_off_multi(&dsi_ctx);
-	mipi_dsi_msleep(&dsi_ctx, 100);
-	mipi_dsi_dcs_enter_sleep_mode_multi(&dsi_ctx);
-	mipi_dsi_msleep(&dsi_ctx, 120);
-	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x8f, 0x00);
-	mipi_dsi_usleep_range(&dsi_ctx, 4000, 5000);
-
-	return dsi_ctx.accum_err;
-}
-
 static int huawei_nt51021_prepare(struct drm_panel *panel)
 {
 	struct huawei_nt51021 *ctx = to_huawei_nt51021(panel);
-	struct mipi_dsi_multi_context dsi_ctx = { .dsi = ctx->dsi };
 	struct device *dev = &ctx->dsi->dev;
 	int ret;
 
@@ -147,7 +124,7 @@ static int huawei_nt51021_prepare(struct drm_panel *panel)
 
 	// 2. Panel-Power (oft die 3.3V Schiene)
 	ret = regulator_enable(ctx->power);
-	if (ret < 0) goto ret;
+	if (ret < 0) return ret;
 	msleep(10);
 
 	// 3. Analoge Spannungen für die Source-Driver
@@ -192,13 +169,17 @@ static int huawei_nt51021_enable(struct drm_panel *panel)
 {
 	struct huawei_nt51021 *ctx = to_huawei_nt51021(panel);
 	struct mipi_dsi_multi_context dsi_ctx = { .dsi = ctx->dsi };
-
+	int ret;
+	
 	// 1. Backlight-Enable GPIO (Hardware-Schalter für den Treiber)
 	gpiod_set_value_cansleep(ctx->bl_en_gpio, 1);
 
 	// 2. VLED Regulator (Die Hochspannung für die LEDs)
-	huawei_nt51021_gpio_vled(ctx, 1);
-	msleep(50);
+	ret = huawei_nt51021_gpio_vled(ctx, 1);
+	if (ret < 0)
+		return ret;
+
+	msleep(200);
 
 	// 3. Display aus dem Sleep holen und Bild anzeigen
 	mipi_dsi_dcs_exit_sleep_mode_multi(&dsi_ctx);
@@ -284,21 +265,24 @@ static const struct drm_panel_funcs huawei_nt51021_panel_funcs = {
 
 static int huawei_nt51021_set_brightness(struct mipi_dsi_device *dsi, u16 brightness)
 {
-    u8 b_val = (u8)brightness; // Nur das untere Byte nutzen (0-255)
-    int ret;
+	u8 val = (u8)brightness;
+	u8 p0_cmd[] = {0x00};
+	u8 pa_std_83[] = {0xaa};
+	u8 p1_std_84[] = {0x11};
+	int ret;
 
-    // Zurück auf Page 0 schalten
-    mipi_dsi_dcs_write_seq(dsi, 0x83, 0x00);
-    mipi_dsi_dcs_write_seq(dsi, 0x84, 0x00);
+	// Page 0
+	mipi_dsi_generic_write(dsi, 0x83, p0_cmd, 1);
+	mipi_dsi_generic_write(dsi, 0x84, p0_cmd, 1);
 
-    // Brightness schreiben
-    ret = mipi_dsi_dcs_write(dsi, HUAWEI_NT51021_BRIGHTNESS, &b_val, 1);
-    
-    // Optional: Zurück auf die "Standard-Page" (aa, 11) schalten, falls nötig
-     mipi_dsi_dcs_write_seq(dsi, 0x83, 0xaa);
-     mipi_dsi_dcs_write_seq(dsi, 0x84, 0x11);
+	// Write Brightnes
+	ret = mipi_dsi_dcs_write(dsi, HUAWEI_NT51021_BRIGHTNESS, &val, 1);
 
-    return ret;
+	// back to page a and 1
+	mipi_dsi_generic_write(dsi, 0x83, pa_std_83, 1);
+	mipi_dsi_generic_write(dsi, 0x84, p1_std_84, 1);
+
+	return ret;
 }
 
 static int huawei_nt51021_bl_update_status(struct backlight_device *bl)
