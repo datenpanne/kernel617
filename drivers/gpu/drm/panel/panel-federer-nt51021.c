@@ -266,21 +266,22 @@ static const struct drm_panel_funcs huawei_nt51021_panel_funcs = {
 static int huawei_nt51021_set_brightness(struct mipi_dsi_device *dsi, u16 brightness)
 {
 	u8 val = (u8)brightness;
-	u8 p0_cmd[] = {0x00};
-	u8 pa_std_83[] = {0xaa};
-	u8 p1_std_84[] = {0x11};
+	u8 cmd_p0_83[] = { 0x83, 0x00 };
+	u8 cmd_p0_84[] = { 0x84, 0x00 };
+	u8 cmd_std_83[] = { 0x83, 0xaa };
+	u8 cmd_std_84[] = { 0x84, 0x11 };
 	int ret;
 
 	// Page 0
-	mipi_dsi_generic_write(dsi, 0x83, p0_cmd, 1);
-	mipi_dsi_generic_write(dsi, 0x84, p0_cmd, 1);
+	mipi_dsi_generic_write(dsi, cmd_p0_83, sizeof(cmd_p0_83));
+	mipi_dsi_generic_write(dsi, cmd_p0_84, sizeof(cmd_p0_84));
 
 	// Write Brightnes
 	ret = mipi_dsi_dcs_write(dsi, HUAWEI_NT51021_BRIGHTNESS, &val, 1);
 
-	// back to page a and 1
-	mipi_dsi_generic_write(dsi, 0x83, pa_std_83, 1);
-	mipi_dsi_generic_write(dsi, 0x84, p1_std_84, 1);
+	// back to page aa and 11
+	mipi_dsi_generic_write(dsi, cmd_std_83, sizeof(cmd_std_83));
+	mipi_dsi_generic_write(dsi, cmd_std_84, sizeof(cmd_std_84));
 
 	return ret;
 }
