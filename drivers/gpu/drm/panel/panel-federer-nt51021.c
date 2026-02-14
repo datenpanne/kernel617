@@ -337,7 +337,7 @@ static int huawei_nt51021_probe(struct mipi_dsi_device *dsi)
 		return dev_err_probe(dev, PTR_ERR(ctx->reset_gpio),
 				     "Failed to get reset-gpios\n");
 
-	ctx->bl_pwr_gpio = devm_gpiod_get(dev, "backlight", GPIOD_OUT_LOW);
+	ctx->bl_pwr_gpio = devm_gpiod_get(dev, "backlight", GPIOD_OUT_HIGH);
 	if (IS_ERR(ctx->bl_pwr_gpio))
 		return dev_err_probe(dev, PTR_ERR(ctx->bl_pwr_gpio),
 				     "Failed to get backlight-gpios\n");
@@ -347,7 +347,7 @@ static int huawei_nt51021_probe(struct mipi_dsi_device *dsi)
 		return dev_err_probe(dev, PTR_ERR(ctx->vled_en_gpio),
 				     "Failed to get backlight-gpios\n");
 				     
-	ctx->vcc_pwr_gpio = devm_gpiod_get(dev, "power", GPIOD_OUT_LOW);
+	ctx->vcc_pwr_gpio = devm_gpiod_get(dev, "power", GPIOD_OUT_HIGH);
 	if (IS_ERR(ctx->vcc_pwr_gpio))
 		return dev_err_probe(dev, PTR_ERR(ctx->vcc_pwr_gpio),
 				     "Failed to get power-gpios\n");
