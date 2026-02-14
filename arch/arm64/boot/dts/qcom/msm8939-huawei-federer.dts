@@ -255,7 +255,7 @@
 		regulator-always-on;
 	};
 
-	reg_lcd_vddio: regulator-lcd-vddio {
+	/*reg_lcd_vddio: regulator-lcd-vddio {
 		compatible = "regulator-fixed";
 		regulator-name = "lcd-vdd";
 
@@ -278,7 +278,7 @@
 		enable-active-high;
 		pinctrl-0 = <&lcd_vled_default>;
 		pinctrl-names = "default";
-	};
+	};*/
 
 	reg_lcd_vsp: regulator-lcd-vsp {
 		compatible = "regulator-fixed";
@@ -443,14 +443,14 @@
 		compatible = "huawei,federer-panel";
 		reg = <0>;
 
-		power-supply = <&reg_lcd_vddio>;
+		vddio-supply = <&pm8916_l6>;
 		vsp-supply = <&reg_lcd_vsp>;
 		vsn-supply = <&reg_lcd_vsn>;
-		vled-supply = <&reg_lcd_vled>;
+
+		blpower-gpios = <&tlmm 97 GPIO_ACTIVE_LOW>;
+		power-gpios = <&tlmm 32 GPIO_ACTIVE_HIGH>;
 
 		backlight-gpios = <&tlmm 109 GPIO_ACTIVE_HIGH>;
-
-		//backlight-gpios = <&tlmm 97 GPIO_ACTIVE_LOW>;
 
 		reset-gpios = <&tlmm 25 GPIO_ACTIVE_LOW>;
 	//	te-gpios = <&tlmm 24 GPIO_ACTIVE_HIGH>;
@@ -789,7 +789,7 @@
 		bias-disable;
 	};
 
-	lcd_vled_default: lcd-vled-default-state {
+	/*lcd_vled_default: lcd-vled-default-state {
 		pins = "gpio97";
 		function = "gpio";
 
@@ -805,7 +805,7 @@
 		drive-strength = <2>;
 		bias-pull-up;
 		output-high;
-	};
+	};*/
 	
 	mdss_default: mdss-default-state {
 		pins = "gpio25";

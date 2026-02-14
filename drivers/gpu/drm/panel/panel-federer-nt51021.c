@@ -19,13 +19,13 @@ struct huawei_nt51021 {
 	struct drm_panel panel;
 	struct mipi_dsi_device *dsi;
 	struct gpio_desc *reset_gpio;
-	struct gpio_desc *bl_en_gpio;
+	struct gpio_desc *vcc_pwr_gpio;
+	struct gpio_desc *bl_pwr_gpio;
+	struct gpio_desc *vled_en_gpio;
 
-	struct regulator *power;
-	//struct regulator *vddio;
+	struct regulator *vddio;
 	struct regulator *vsp;
 	struct regulator *vsn;
-	struct regulator *vled;
 
 	int hw_led_en_flag; //from original source
 };
@@ -42,15 +42,15 @@ static int huawei_nt51021_gpio_vled(struct huawei_nt51021 *ctx, int enable)
 {
 	int ret;
 
-	if (enable) {
-		ret = regulator_enable(ctx->vled);
+	if (enable==1) {
+		ret = gpiod_set_value(ctx->vled_en_gpio, enable);
 		if (ret < 0) {
-			dev_err(&ctx->dsi->dev, "Failed to enable VLED regulator: %d\n", ret);
+			dev_err(&ctx->dsi->dev, "Failed to enable VLED gpio: %d\n", ret);
 			return ret;
 		}
 		ctx->hw_led_en_flag = 1;
 	} else {
-		regulator_disable(ctx->vled);
+		gpiod_set_value(ctx->vled_en_gpio, enable)
 		ctx->hw_led_en_flag = 0;
 	}
 
@@ -63,12 +63,6 @@ static int huawei_nt51021_on(struct huawei_nt51021 *ctx)
 
 	ctx->dsi->mode_flags |= MIPI_DSI_MODE_LPM;
 
-	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x8f, 0xa5);
-	mipi_dsi_usleep_range(&dsi_ctx, 5000, 6000);
-	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x01, 0x00);
-	mipi_dsi_msleep(&dsi_ctx, 30);
-	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x8f, 0xa5);
-	mipi_dsi_usleep_range(&dsi_ctx, 1000, 2000);
 	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x83, 0x00);
 	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x84, 0x00);
 	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x8c, 0x80);
@@ -105,8 +99,6 @@ static int huawei_nt51021_on(struct huawei_nt51021 *ctx)
 	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x9c, 0x10);
 	mipi_dsi_dcs_exit_sleep_mode_multi(&dsi_ctx);
 	mipi_dsi_usleep_range(&dsi_ctx, 5000, 6000);
-	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x8f, 0x00);
-	mipi_dsi_usleep_range(&dsi_ctx, 1000, 2000);
 
 	return dsi_ctx.accum_err;
 }
@@ -117,23 +109,20 @@ static int huawei_nt51021_prepare(struct drm_panel *panel)
 	struct device *dev = &ctx->dsi->dev;
 	int ret;
 
-	/*// 1. Digitale Logik-Spannung (VCC/VDDIO)
 	ret = regulator_enable(ctx->vddio);
 	if (ret < 0) return ret;
-	msleep(20);*/
+	msleep(20);
 
-	// 2. Panel-Power (oft die 3.3V Schiene)
-	ret = regulator_enable(ctx->power);
-	if (ret < 0) return ret;
-	msleep(10);
+	gpiod_set_value_cansleep(ctx->vcc_pwr_gpio, 1);
+	msleep(300);
 
 	// 3. Analoge Spannungen für die Source-Driver
 	ret = regulator_enable(ctx->vsp);
-	if (ret < 0) goto err_power;
+	if (ret < 0) goto err_vddio;
 	ret = regulator_enable(ctx->vsn);
 	if (ret < 0) {
 		regulator_disable(ctx->vsp);
-		goto err_power;
+		goto err_vddio;
 	}
 	msleep(20);
 
@@ -157,12 +146,9 @@ static int huawei_nt51021_prepare(struct drm_panel *panel)
 err_vsn:
 	regulator_disable(ctx->vsn);
 	regulator_disable(ctx->vsp);
-err_power:
-	regulator_disable(ctx->power);
-	return ret;
-/*err_vddio:
+err_vddio:
 	regulator_disable(ctx->vddio);
-	return ret;*/
+	return ret;
 }
 
 static int huawei_nt51021_enable(struct drm_panel *panel)
@@ -173,6 +159,7 @@ static int huawei_nt51021_enable(struct drm_panel *panel)
 	
 	// 1. Backlight-Enable GPIO (Hardware-Schalter für den Treiber)
 	gpiod_set_value_cansleep(ctx->bl_en_gpio, 1);
+	msleep(30);
 
 	// 2. VLED Regulator (Die Hochspannung für die LEDs)
 	ret = huawei_nt51021_gpio_vled(ctx, 1);
@@ -203,12 +190,11 @@ static int huawei_nt51021_unprepare(struct drm_panel *panel)
 	regulator_disable(ctx->vsp);
 	msleep(20);
 
-	// 3. Haupt-Power abschalten
-	regulator_disable(ctx->power);
-	msleep(10);
-
 	// 4. Digitale Logik (VDDIO) zuletzt trennen
-	//regulator_disable(ctx->vddio);
+	regulator_disable(ctx->vddio);
+
+	gpiod_set_value_cansleep(ctx->vcc_pwr_gpio, 0);
+	msleep(300);
 
 	return 0;
 }
@@ -268,8 +254,8 @@ static int huawei_nt51021_set_brightness(struct mipi_dsi_device *dsi, u16 bright
 	u8 val = (u8)brightness;
 	u8 cmd_p0_83[] = { 0x83, 0x00 };
 	u8 cmd_p0_84[] = { 0x84, 0x00 };
-	u8 cmd_std_83[] = { 0x83, 0xaa };
-	u8 cmd_std_84[] = { 0x84, 0x11 };
+	u8 cmd_pa_83[] = { 0x83, 0xaa };
+	u8 cmd_p1_84[] = { 0x84, 0x11 };
 	int ret;
 
 	// Page 0
@@ -280,8 +266,8 @@ static int huawei_nt51021_set_brightness(struct mipi_dsi_device *dsi, u16 bright
 	ret = mipi_dsi_dcs_write(dsi, HUAWEI_NT51021_BRIGHTNESS, &val, 1);
 
 	// back to page aa and 11
-	mipi_dsi_generic_write(dsi, cmd_std_83, sizeof(cmd_std_83));
-	mipi_dsi_generic_write(dsi, cmd_std_84, sizeof(cmd_std_84));
+	mipi_dsi_generic_write(dsi, cmd_pa_83, sizeof(cmd_pa_83));
+	mipi_dsi_generic_write(dsi, cmd_p1_84, sizeof(cmd_p1_84));
 
 	return ret;
 }
@@ -331,15 +317,10 @@ static int huawei_nt51021_probe(struct mipi_dsi_device *dsi)
 	if (!ctx)
 		return -ENOMEM;
 
-	ctx->power = devm_regulator_get(dev, "power");
-	if (IS_ERR(ctx->power))
-		return dev_err_probe(dev, PTR_ERR(ctx->power),
-				     "Failed to get power regulator\n");
-
-	/*ctx->vddio = devm_regulator_get(dev, "vddio");
+	ctx->vddio = devm_regulator_get(dev, "vddio");
 	if (IS_ERR(ctx->vddio))
 		return dev_err_probe(dev, PTR_ERR(ctx->vddio),
-				     "Failed to get vddio regulator\n");*/
+				     "Failed to get vddio regulator\n");
 
 	ctx->vsp = devm_regulator_get(dev, "vsp");
 	if (IS_ERR(ctx->vsp))
@@ -351,20 +332,26 @@ static int huawei_nt51021_probe(struct mipi_dsi_device *dsi)
 		return dev_err_probe(dev, PTR_ERR(ctx->vsn),
 				     "Failed to get vsn regulator\n");
 
-	ctx->vled = devm_regulator_get(dev, "vled");
-	if (IS_ERR(ctx->vled))
-		return dev_err_probe(dev, PTR_ERR(ctx->vled),
-				     "Failed to get vled regulator\n");
-
 	ctx->reset_gpio = devm_gpiod_get(dev, "reset", GPIOD_OUT_HIGH);
 	if (IS_ERR(ctx->reset_gpio))
 		return dev_err_probe(dev, PTR_ERR(ctx->reset_gpio),
 				     "Failed to get reset-gpios\n");
 
-	ctx->bl_en_gpio = devm_gpiod_get(dev, "backlight", GPIOD_OUT_HIGH);
+	ctx->bl_en_gpio = devm_gpiod_get(dev, "backlight", GPIOD_OUT_LOW);
 	if (IS_ERR(ctx->bl_en_gpio))
 		return dev_err_probe(dev, PTR_ERR(ctx->bl_en_gpio),
 				     "Failed to get backlight-gpios\n");
+
+	ctx->vled_en_gpio = devm_gpiod_get(dev, "blpower", GPIOD_OUT_HIGH);
+	if (IS_ERR(ctx->vled_en_gpio))
+		return dev_err_probe(dev, PTR_ERR(ctx->vled_en_gpio),
+				     "Failed to get backlight-gpios\n");
+				     
+	ctx->vcc_pwr_gpio = devm_gpiod_get(dev, "power", GPIOD_OUT_LOW);
+	if (IS_ERR(ctx->vcc_pwr_gpio))
+		return dev_err_probe(dev, PTR_ERR(ctx->vcc_pwr_gpio),
+				     "Failed to get power-gpios\n");
+
 
 	ctx->dsi = dsi;
 	mipi_dsi_set_drvdata(dsi, ctx);
