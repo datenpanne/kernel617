@@ -50,7 +50,7 @@ static int huawei_nt51021_gpio_vled(struct huawei_nt51021 *ctx, int enable)
 		}
 		ctx->hw_led_en_flag = 1;
 	} else {
-		gpiod_set_value(ctx->vled_en_gpio, enable)
+		gpiod_set_value(ctx->vled_en_gpio, enable);
 		ctx->hw_led_en_flag = 0;
 	}
 
@@ -158,7 +158,7 @@ static int huawei_nt51021_enable(struct drm_panel *panel)
 	int ret;
 	
 	// 1. Backlight-Enable GPIO (Hardware-Schalter für den Treiber)
-	gpiod_set_value_cansleep(ctx->bl_en_gpio, 1);
+	gpiod_set_value_cansleep(ctx->bl_pwr_gpio, 1);
 	msleep(30);
 
 	// 2. VLED Regulator (Die Hochspannung für die LEDs)
@@ -206,7 +206,7 @@ static int huawei_nt51021_disable(struct drm_panel *panel)
 
 	// 1. Backlight zuerst aus, um Artefakte beim Abschalten zu verbergen
 	huawei_nt51021_gpio_vled(ctx, 0);
-	gpiod_set_value_cansleep(ctx->bl_en_gpio, 0);
+	gpiod_set_value_cansleep(ctx->bl_pwr_gpio, 0);
 	msleep(20);
 
 	// 2. Display-Aus Befehl und Sleep-Modus
@@ -337,9 +337,9 @@ static int huawei_nt51021_probe(struct mipi_dsi_device *dsi)
 		return dev_err_probe(dev, PTR_ERR(ctx->reset_gpio),
 				     "Failed to get reset-gpios\n");
 
-	ctx->bl_en_gpio = devm_gpiod_get(dev, "backlight", GPIOD_OUT_LOW);
-	if (IS_ERR(ctx->bl_en_gpio))
-		return dev_err_probe(dev, PTR_ERR(ctx->bl_en_gpio),
+	ctx->bl_pwr_gpio = devm_gpiod_get(dev, "backlight", GPIOD_OUT_LOW);
+	if (IS_ERR(ctx->bl_pwr_gpio))
+		return dev_err_probe(dev, PTR_ERR(ctx->bl_pwr_gpio),
 				     "Failed to get backlight-gpios\n");
 
 	ctx->vled_en_gpio = devm_gpiod_get(dev, "blpower", GPIOD_OUT_HIGH);
