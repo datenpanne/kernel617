@@ -202,7 +202,7 @@ static int huawei_nt51021_set_brightness(struct mipi_dsi_device *dsi, u16 bright
 	mipi_dsi_dcs_write_seq_multi(&dsi_ctx, 0x83, 0x00);
 	mipi_dsi_dcs_write_seq_multi(&dsi_ctx, 0x84, 0x00);
 
-	mipi_dsi_dcs_write_multi(&dsi_ctx, NT51021_REG_BKLT_PWM, &val, 1);
+	mipi_dsi_dcs_write_seq_multi(&dsi_ctx, NT51021_REG_BKLT_PWM, &val, 1);
 
 	mipi_dsi_dcs_write_seq_multi(&dsi_ctx, 0x83, 0xaa);
 	mipi_dsi_dcs_write_seq_multi(&dsi_ctx, 0x84, 0x11);
