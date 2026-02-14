@@ -165,11 +165,11 @@ static int huawei_nt51021_unprepare(struct drm_panel *panel)
 }
 
 static const struct drm_display_mode huawei_nt51021_mode = {
-	.clock = (1200 + 64 + 4 + 36) * (1920 + 104 + 2 + 24) * 60 / 1000,
+	.clock = (1200 + 80 + 20 + 60) * (1920 + 104 + 2 + 24) * 60 / 1000,
 	.hdisplay = 1200,
-	.hsync_start = 1200 + 64,
-	.hsync_end = 1200 + 64 + 4,
-	.htotal = 1200 + 64 + 4 + 36,
+	.hsync_start = 1200 + 80,  /* Erhöht von 64 */
+	.hsync_end = 1200 + 80 + 20, /* Erhöht von 4 */
+	.htotal = 1200 + 80 + 20 + 60, /* Erhöht von 36 */
 	.vdisplay = 1920,
 	.vsync_start = 1920 + 104,
 	.vsync_end = 1920 + 104 + 2,
@@ -208,10 +208,16 @@ static int huawei_nt51021_bl_update_status(struct backlight_device *bl)
 	struct mipi_dsi_device *dsi = bl_get_data(bl);
 	struct huawei_nt51021 *ctx = mipi_dsi_get_drvdata(dsi);
 	u16 brightness = backlight_get_brightness(bl);
+	int ret;
+
+	dsi->mode_flags &= ~MIPI_DSI_MODE_LPM;
 	
 	gpiod_set_value_cansleep(ctx->backlight_gpio, !!brightness);
-	
-	return huawei_nt51021_set_brightness(dsi, brightness);
+	ret = huawei_nt51021_set_brightness(dsi, brightness);
+
+	dsi->mode_flags |= MIPI_DSI_MODE_LPM;
+
+	return ret;
 }
 
 static const struct backlight_ops huawei_nt51021_bl_ops = {
