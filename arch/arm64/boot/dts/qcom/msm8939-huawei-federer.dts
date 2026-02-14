@@ -305,7 +305,7 @@
 		regulator-min-microvolt = <1800000>;
 		regulator-max-microvolt = <1800000>;
 		
-		gpio = <&msmgpio 32 GPIO_ACTIVE_HIGH>;
+		gpio = <&tlmm 32 GPIO_ACTIVE_HIGH>;
 		regulator-boot-on;
 		enable-active-high;
 		pinctrl-0 = <&lcd_vddio_default>;
@@ -316,7 +316,7 @@
 		compatible = "regulator-fixed";
 		regulator-name = "reg_vsp_vsn";
 		
-		gpio = <&msm_gpio 109 GPIO_ACTIVE_HIGH>;
+		gpio = <&tlmm 109 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 		regulator-boot-on;
 		
