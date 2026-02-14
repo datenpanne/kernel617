@@ -280,7 +280,7 @@
 		pinctrl-names = "default";
 	};*/
 
-	reg_lcd_vsp: regulator-lcd-vsp {
+	/*reg_lcd_vsp: regulator-lcd-vsp {
 		compatible = "regulator-fixed";
 		regulator-name = "lcd-vsp";
 
@@ -288,7 +288,7 @@
 		regulator-max-microvolt = <5400000>;
 		regulator-boot-on;
 	};
-
+	
 	reg_lcd_vsn: regulator-lcd-vsn {
 		compatible = "regulator-fixed";
 		regulator-name = "lcd-vsn";
@@ -296,6 +296,32 @@
 		regulator-min-microvolt = <5400000>;
 		regulator-max-microvolt = <5400000>;
 		regulator-boot-on;
+	};*/
+
+	reg_lcd_vddio: regulator-lcd-vddio {
+		compatible = "regulator-fixed";
+		regulator-name = "vddio_1v8";
+		
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+		
+		gpio = <&msmgpio 32 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
+		enable-active-high;
+		pinctrl-0 = <&lcd_vddio_default>;
+		pinctrl-names = "default";
+	};
+
+	reg_lcd_vsp_vsn: regulator-lcd-vsp-vsn {
+		compatible = "regulator-fixed";
+		regulator-name = "reg_vsp_vsn";
+		
+		gpio = <&msm_gpio 109 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		regulator-boot-on;
+		
+		pinctrl-0 = <&lcd_vsp_vsn_default>;
+		pinctrl-names = "default";
 	};
 
 	/*reg_lcd_vled: gpio-regulator@97 {
@@ -443,16 +469,13 @@
 		compatible = "huawei,federer-panel";
 		reg = <0>;
 
-		vddio-supply = <&pm8916_l6>;
-		vsp-supply = <&reg_lcd_vsp>;
-		vsn-supply = <&reg_lcd_vsn>;
+		vddio-supply = <&reg_lcd_vddio>;
+		vsp-supply = <&reg_lcd_vsp_vsn>;
+		vsn-supply = <&reg_lcd_vsp_vsn>;
 
-		blpower-gpios = <&tlmm 97 GPIO_ACTIVE_LOW>;
-		power-gpios = <&tlmm 32 GPIO_ACTIVE_LOW>;
-
-		backlight-gpios = <&tlmm 109 GPIO_ACTIVE_LOW>;
-
+		backlight-gpios = <&tlmm 97 GPIO_ACTIVE_HIGH>;
 		reset-gpios = <&tlmm 25 GPIO_ACTIVE_LOW>;
+		
 	//	te-gpios = <&tlmm 24 GPIO_ACTIVE_HIGH>;
 
 		port {
@@ -789,8 +812,8 @@
 		bias-disable;
 	};
 
-	/*lcd_vled_default: lcd-vled-default-state {
-		pins = "gpio97";
+	lcd_vsp_vsn_default: lcd-vsp-vsn-default-state {
+		pins = "gpio109";
 		function = "gpio";
 
 		drive-strength = <2>;
@@ -805,7 +828,7 @@
 		drive-strength = <2>;
 		bias-pull-up;
 		output-high;
-	};*/
+	};
 	
 	mdss_default: mdss-default-state {
 		pins = "gpio25";
