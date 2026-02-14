@@ -38,6 +38,16 @@ struct huawei_nt51021 *to_huawei_nt51021(struct drm_panel *panel)
 	return container_of(panel, struct huawei_nt51021, panel);
 }
 
+static void huawei_nt51021_reset(struct boe_nt51021_10_1200p *ctx)
+{
+	gpiod_set_value_cansleep(ctx->reset_gpio, 0);
+	usleep_range(1000, 2000);
+	gpiod_set_value_cansleep(ctx->reset_gpio, 1);
+	msleep(20);
+	gpiod_set_value_cansleep(ctx->reset_gpio, 0);
+	msleep(30);
+}
+
 static int huawei_nt51021_gpio_vled(struct huawei_nt51021 *ctx, int enable)
 {
 	int ret;
@@ -98,7 +108,6 @@ static int huawei_nt51021_on(struct huawei_nt51021 *ctx)
 	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x86, 0x08);
 	mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x9c, 0x10);
 	mipi_dsi_dcs_exit_sleep_mode_multi(&dsi_ctx);
-	mipi_dsi_usleep_range(&dsi_ctx, 5000, 6000);
 
 	return dsi_ctx.accum_err;
 }
@@ -109,14 +118,13 @@ static int huawei_nt51021_prepare(struct drm_panel *panel)
 	struct device *dev = &ctx->dsi->dev;
 	int ret;
 
-	ret = regulator_enable(ctx->vddio);
-	if (ret < 0) return ret;
-	msleep(20);
-
 	gpiod_set_value_cansleep(ctx->vcc_pwr_gpio, 1);
 	msleep(300);
+	
+	ret = regulator_enable(ctx->vddio);
+	if (ret < 0) return ret;
+	usleep_range(5000,7000);
 
-	// 3. Analoge Spannungen für die Source-Driver
 	ret = regulator_enable(ctx->vsp);
 	if (ret < 0) goto err_vddio;
 	ret = regulator_enable(ctx->vsn);
@@ -130,18 +138,13 @@ static int huawei_nt51021_prepare(struct drm_panel *panel)
 	gpiod_set_value_cansleep(ctx->bl_pwr_gpio, 1);
 	msleep(30);
 
-	// 4. Reset-Zyklus: Aktivieren -> Warten -> Deaktivieren
-	// Annahme: Active Low (0 = Reset aktiv). 
-	// Da wir mit GPIOD_OUT_HIGH proben, ist '1' in der Software = Hardware Reset Pin LOW.
-	gpiod_set_value_cansleep(ctx->reset_gpio, 1); 
-	usleep_range(10000, 15000);
-	gpiod_set_value_cansleep(ctx->reset_gpio, 0); // Reset verlassen
-	msleep(20);
+	huawei_nt51021_reset(ctx);
 
 	// 5. Initialisierungs-Register senden (LP Mode)
 	ret = huawei_nt51021_on(ctx);
 	if (ret < 0) {
 		dev_err(dev, "Failed to send init sequence: %d\n", ret);
+		gpiod_set_value_cansleep(ctx->reset_gpio, 1);
 		goto err_vsn;
 	}
 
@@ -180,12 +183,9 @@ static int huawei_nt51021_unprepare(struct drm_panel *panel)
 {
 	struct huawei_nt51021 *ctx = to_huawei_nt51021(panel);
 
-	// 1. Reset wieder aktivieren (Pin auf Low ziehen)
-	// Software '1' -> Hardware Reset Pin LOW bei GPIOD_OUT_HIGH
 	gpiod_set_value_cansleep(ctx->reset_gpio, 1);
 	msleep(20);
 
-	// 2. Analoge Spannungen (Source Driver) zuerst entladen
 	regulator_disable(ctx->vsn);
 	regulator_disable(ctx->vsp);
 	usleep_range(3000,6000);
@@ -193,7 +193,6 @@ static int huawei_nt51021_unprepare(struct drm_panel *panel)
 	gpiod_set_value_cansleep(ctx->bl_pwr_gpio, 0);
 	msleep(20);
 
-	// 4. Digitale Logik (VDDIO) zuletzt trennen
 	regulator_disable(ctx->vddio);
 
 	gpiod_set_value_cansleep(ctx->vcc_pwr_gpio, 0);
@@ -207,15 +206,13 @@ static int huawei_nt51021_disable(struct drm_panel *panel)
 	struct huawei_nt51021 *ctx = to_huawei_nt51021(panel);
 	struct mipi_dsi_multi_context dsi_ctx = { .dsi = ctx->dsi };
 
-	// 1. Backlight zuerst aus, um Artefakte beim Abschalten zu verbergen
 	huawei_nt51021_gpio_vled(ctx, 0);
 	msleep(100);
-	// 2. Display-Aus Befehl und Sleep-Modus
+
 	mipi_dsi_dcs_set_display_off_multi(&dsi_ctx);
-	msleep(20);
+	msleep(80);
+
 	mipi_dsi_dcs_enter_sleep_mode_multi(&dsi_ctx);
-	
-	// Dem Panel Zeit geben, den internen Status zu speichern (DCS Standard: 120ms)
 	msleep(120);
 
 	return dsi_ctx.accum_err;
