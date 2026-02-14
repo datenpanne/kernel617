@@ -55,10 +55,7 @@ static int huawei_nt51021_on(struct huawei_nt51021 *ctx)
 {
 	struct mipi_dsi_multi_context dsi_ctx = { .dsi = ctx->dsi };
 
-	/* Panel in Low Power Mode für Initialisierung */
 	ctx->dsi->mode_flags |= MIPI_DSI_MODE_LPM;
-
-	/* --- Exakte Init-Sequenz aus der hw-panel-boe-nt51021...dtsi --- */
 	
 	/* Page 0 */
 	mipi_dsi_dcs_write_seq_multi(&dsi_ctx, 0x83, 0x00);
@@ -136,6 +133,7 @@ static int huawei_nt51021_prepare(struct drm_panel *panel)
 		dev_err(dev, "Failed to enable regulators: %d\n", ret);
 		return ret;
 	}
+	msleep(200);
 
 	huawei_nt51021_reset(ctx);
 
@@ -196,25 +194,13 @@ static const struct drm_panel_funcs huawei_nt51021_panel_funcs = {
 static int huawei_nt51021_set_brightness(struct mipi_dsi_device *dsi, u16 brightness)
 {
 	u8 val = (u8)brightness;
-	struct mipi_dsi_multi_context dsi_ctx = { .dsi = dsi };
 	int ret;
-
-	/* Page 0 Selektion */
-	mipi_dsi_dcs_write_seq_multi(&dsi_ctx, 0x83, 0x00);
-	mipi_dsi_dcs_write_seq_multi(&dsi_ctx, 0x84, 0x00);
-
-	if (dsi_ctx.accum_err)
-		return dsi_ctx.accum_err;
 
 	ret = mipi_dsi_dcs_write(dsi, NT51021_REG_BKLT_PWM, &val, 1);
 	if (ret < 0)
 		return ret;
 
-	/* Back to Page AA/11 */
-	mipi_dsi_dcs_write_seq_multi(&dsi_ctx, 0x83, 0xaa);
-	mipi_dsi_dcs_write_seq_multi(&dsi_ctx, 0x84, 0x11);
-
-	return dsi_ctx.accum_err;
+	return 0;
 }
 
 static int huawei_nt51021_bl_update_status(struct backlight_device *bl)
@@ -222,19 +208,10 @@ static int huawei_nt51021_bl_update_status(struct backlight_device *bl)
 	struct mipi_dsi_device *dsi = bl_get_data(bl);
 	struct huawei_nt51021 *ctx = mipi_dsi_get_drvdata(dsi);
 	u16 brightness = backlight_get_brightness(bl);
-	int ret;
-
+	
 	gpiod_set_value_cansleep(ctx->backlight_gpio, !!brightness);
-
-	dsi->mode_flags &= ~MIPI_DSI_MODE_LPM;
-
-	ret = huawei_nt51021_set_brightness(dsi, brightness);
-	if (ret < 0)
-		return ret;
-
-	dsi->mode_flags |= MIPI_DSI_MODE_LPM;
-
-	return 0;
+	
+	return huawei_nt51021_set_brightness(dsi, brightness);
 }
 
 static const struct backlight_ops huawei_nt51021_bl_ops = {
