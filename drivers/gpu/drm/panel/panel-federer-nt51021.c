@@ -38,7 +38,7 @@ struct huawei_nt51021 *to_huawei_nt51021(struct drm_panel *panel)
 	return container_of(panel, struct huawei_nt51021, panel);
 }
 
-static void huawei_nt51021_reset(struct boe_nt51021_10_1200p *ctx)
+static void huawei_nt51021_reset(struct huawei_nt51021 *ctx)
 {
 	gpiod_set_value_cansleep(ctx->reset_gpio, 0);
 	usleep_range(1000, 2000);
