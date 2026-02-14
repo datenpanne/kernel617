@@ -183,16 +183,6 @@
 		sound-name-prefix = "Headphones Switch";
 	};*/
 
-	/*lcd_vcc: gpio-regulator@32 {
-		compatible = "regulator-fixed";
-		regulator-name = "lcd-vcc";
-
-		gpio= <&tlmm 32 GPIO_ACTIVE_HIGH>;
-		regulator-always-on;
-		regulator-boot-on;
-		enable-active-high;
-	};*/
-
 	speaker_amp: audio-amplifier {
 		compatible = "simple-audio-amplifier";
 		VCC-supply = <&speaker_boost>;
@@ -255,49 +245,6 @@
 		regulator-always-on;
 	};
 
-	/*reg_lcd_vddio: regulator-lcd-vddio {
-		compatible = "regulator-fixed";
-		regulator-name = "lcd-vdd";
-
-		vin-supply = <&pm8916_l6>;
-		regulator-boot-on;
-		gpio = <&tlmm 32 GPIO_ACTIVE_HIGH>; //pwr panel
-		enable-active-high;
-		pinctrl-0 = <&lcd_vddio_default>;
-		pinctrl-names = "default";
-	};
-
-	reg_lcd_vled: regulator-lcd-vled {
-		compatible = "regulator-fixed";
-		regulator-name = "lcd-vled";
-
-		regulator-min-microvolt = <5400000>;
-		regulator-max-microvolt = <5400000>;
-		regulator-boot-on;
-		gpio = <&tlmm 97 GPIO_ACTIVE_HIGH>; //vled
-		enable-active-high;
-		pinctrl-0 = <&lcd_vled_default>;
-		pinctrl-names = "default";
-	};*/
-
-	/*reg_lcd_vsp: regulator-lcd-vsp {
-		compatible = "regulator-fixed";
-		regulator-name = "lcd-vsp";
-
-		regulator-min-microvolt = <5400000>;
-		regulator-max-microvolt = <5400000>;
-		regulator-boot-on;
-	};
-	
-	reg_lcd_vsn: regulator-lcd-vsn {
-		compatible = "regulator-fixed";
-		regulator-name = "lcd-vsn";
-
-		regulator-min-microvolt = <5400000>;
-		regulator-max-microvolt = <5400000>;
-		regulator-boot-on;
-	};*/
-
 	reg_lcd_vddio: regulator-lcd-vddio {
 		compatible = "regulator-fixed";
 		regulator-name = "vddio_1v8";
@@ -323,14 +270,6 @@
 		pinctrl-0 = <&lcd_vsp_vsn_default>;
 		pinctrl-names = "default";
 	};
-
-	/*reg_lcd_vled: gpio-regulator@97 {
-		compatible = "regulator-fixed";
-		regulator-name = "lcd-vled";
-		gpio = <&tlmm 97 GPIO_ACTIVE_HIGH>;
-		enable-active-high;
-		//regulator-boot-on;
-	};*/
 
 	otg_path: otg_path {
 		compatible = "regulator-fixed";
