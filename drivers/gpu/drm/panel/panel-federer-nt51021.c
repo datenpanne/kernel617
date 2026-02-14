@@ -124,7 +124,11 @@ static int huawei_nt51021_prepare(struct drm_panel *panel)
 		regulator_disable(ctx->vsp);
 		goto err_vddio;
 	}
-	msleep(20);
+	msleep(5);
+	
+	//Backlight-Power GPIO
+	gpiod_set_value_cansleep(ctx->bl_pwr_gpio, 1);
+	msleep(30);
 
 	// 4. Reset-Zyklus: Aktivieren -> Warten -> Deaktivieren
 	// Annahme: Active Low (0 = Reset aktiv). 
@@ -156,10 +160,6 @@ static int huawei_nt51021_enable(struct drm_panel *panel)
 	struct huawei_nt51021 *ctx = to_huawei_nt51021(panel);
 	struct mipi_dsi_multi_context dsi_ctx = { .dsi = ctx->dsi };
 	int ret;
-	
-	// 1. Backlight-Enable GPIO (Hardware-Schalter für den Treiber)
-	gpiod_set_value_cansleep(ctx->bl_pwr_gpio, 1);
-	msleep(30);
 
 	// 2. VLED Regulator (Die Hochspannung für die LEDs)
 	ret = huawei_nt51021_gpio_vled(ctx, 1);
@@ -188,6 +188,9 @@ static int huawei_nt51021_unprepare(struct drm_panel *panel)
 	// 2. Analoge Spannungen (Source Driver) zuerst entladen
 	regulator_disable(ctx->vsn);
 	regulator_disable(ctx->vsp);
+	usleep_range(3000,6000);
+	
+	gpiod_set_value_cansleep(ctx->bl_pwr_gpio, 0);
 	msleep(20);
 
 	// 4. Digitale Logik (VDDIO) zuletzt trennen
@@ -206,9 +209,7 @@ static int huawei_nt51021_disable(struct drm_panel *panel)
 
 	// 1. Backlight zuerst aus, um Artefakte beim Abschalten zu verbergen
 	huawei_nt51021_gpio_vled(ctx, 0);
-	gpiod_set_value_cansleep(ctx->bl_pwr_gpio, 0);
-	msleep(20);
-
+	msleep(100);
 	// 2. Display-Aus Befehl und Sleep-Modus
 	mipi_dsi_dcs_set_display_off_multi(&dsi_ctx);
 	msleep(20);
