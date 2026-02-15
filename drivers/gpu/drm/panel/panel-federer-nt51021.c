@@ -203,16 +203,9 @@ static const struct drm_panel_funcs huawei_nt51021_panel_funcs = {
 
 static int huawei_nt51021_set_brightness(struct mipi_dsi_device *dsi, u16 brightness)
 {
-    struct huawei_nt51021 *ctx = mipi_dsi_get_drvdata(dsi);
     struct mipi_dsi_multi_context dsi_ctx = { .dsi = dsi };
     u8 val = (u8)brightness;
     u8 tx_buf[2];
-
-    if (val > 0)
-        val = val + 7;
-
-    if (val >= 23 && val <= 30)
-        val = 30;
 
     tx_buf[0] = NT51021_REG_BKLT_PWM;
     tx_buf[1] = val;
@@ -298,8 +291,9 @@ static int huawei_nt51021_probe(struct mipi_dsi_device *dsi)
 
 	dsi->lanes = 4;
 	dsi->format = MIPI_DSI_FMT_RGB888;
-	dsi->mode_flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_BURST;// |
-			 // MIPI_DSI_MODE_LPM;// | MIPI_DSI_MODE_NO_EOT_PACKET;
+	dsi->mode_flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_BURST |
+			  MIPI_DSI_MODE_NO_EOT_PACKET |
+			  MIPI_DSI_MODE_LPM;
 
 	drm_panel_init(&ctx->panel, dev, &huawei_nt51021_panel_funcs,
 		       DRM_MODE_CONNECTOR_DSI);
