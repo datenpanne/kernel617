@@ -23,6 +23,7 @@ struct huawei_nt51021 {
 	struct regulator_bulk_data *supplies;
 	struct gpio_desc *reset_gpio;
 	struct gpio_desc *backlight_gpio;
+	bool bl_enabled;
 };
 
 static const struct regulator_bulk_data huawei_nt51021_supplies[] = {
@@ -200,36 +201,22 @@ static const struct drm_panel_funcs huawei_nt51021_panel_funcs = {
 	.get_modes = huawei_nt51021_get_modes,
 };
 
-/*static int huawei_nt51021_set_brightness(struct mipi_dsi_device *dsi, u16 brightness)
-{
-	u8 val = (u8)brightness;
-	int ret;
-
-	ret = mipi_dsi_dcs_write(dsi, NT51021_REG_BKLT_PWM, &val, 1);
-	if (ret < 0)
-		return ret;
-
-	return 0;
-}
-
 static int huawei_nt51021_set_brightness(struct mipi_dsi_device *dsi, u16 brightness)
 {
-    u8 payload[2] = { NT51021_REG_BKLT_PWM, (u8)brightness };
+    u8 val = (u8)brightness;
+    struct mipi_dsi_multi_context dsi_ctx = { .dsi = dsi };
+
+    if (val > 0)
+        val = val + 7;
+    if (val >= 23 && val <= 30)
+        val = 30;
+
+    mipi_dsi_dcs_write_seq_multi(&dsi_ctx, 0x83, 0x00);
+    mipi_dsi_dcs_write_seq_multi(&dsi_ctx, 0x84, 0x00);
     
-    return mipi_dsi_generic_write(dsi, payload, sizeof(payload));
-}*/
+    mipi_dsi_dcs_write_multi(&dsi_ctx, NT51021_REG_BKLT_PWM, &val, 1);
 
-static int huawei_nt51021_set_brightness(struct mipi_dsi_device *dsi, u16 brightness)
-{
-	u8 val = (u8)brightness;
-	
-	if (val > 0)
-		val = val + 7;
-
-	if (val >= 23 && val <= 30)
-		val = 30;
-		
-	return mipi_dsi_dcs_write(dsi, NT51021_REG_BKLT_PWM, &val, 1);
+    return dsi_ctx.accum_err;
 }
 
 static int huawei_nt51021_bl_update_status(struct backlight_device *bl)
@@ -237,9 +224,20 @@ static int huawei_nt51021_bl_update_status(struct backlight_device *bl)
     struct mipi_dsi_device *dsi = bl_get_data(bl);
     struct huawei_nt51021 *ctx = mipi_dsi_get_drvdata(dsi);
     u16 brightness = backlight_get_brightness(bl);
+    bool want_on = !!brightness;
 
-    gpiod_set_value_cansleep(ctx->backlight_gpio, !!brightness);
-    msleep(100);
+    if (want_on && !ctx->bl_enabled) {
+        gpiod_set_value_cansleep(ctx->backlight_gpio, 1);
+        msleep(20);
+        ctx->bl_enabled = true;
+    } 
+
+    else if (!want_on && ctx->bl_enabled) {
+        gpiod_set_value_cansleep(ctx->backlight_gpio, 0);
+        msleep(100);
+        ctx->bl_enabled = false;
+        return 0;
+    }
 
     return huawei_nt51021_set_brightness(dsi, brightness);
 }
@@ -300,6 +298,8 @@ static int huawei_nt51021_probe(struct mipi_dsi_device *dsi)
 	drm_panel_init(&ctx->panel, dev, &huawei_nt51021_panel_funcs,
 		       DRM_MODE_CONNECTOR_DSI);
 	ctx->panel.prepare_prev_first = true;
+
+	ctx->bl_enabled = false;
 
 	ctx->panel.backlight = huawei_nt51021_create_backlight(dsi);
 	if (IS_ERR(ctx->panel.backlight))
