@@ -175,11 +175,11 @@ static int huawei_nt51021_unprepare(struct drm_panel *panel)
 }
 
 static const struct drm_display_mode huawei_nt51021_mode = {
-	.clock = (1200 + 80 + 20 + 60) * (1920 + 104 + 2 + 24) * 60 / 1000,
+	.clock = (1200 + 64 + 4 + 36) * (1920 + 104 + 2 + 24) * 60 / 1000,
 	.hdisplay = 1200,
-	.hsync_start = 1200 + 80,  /* Erhöht von 64 */
-	.hsync_end = 1200 + 80 + 20, /* Erhöht von 4 */
-	.htotal = 1200 + 80 + 20 + 60, /* Erhöht von 36 */
+	.hsync_start = 1200 + 64,
+	.hsync_end = 1200 + 64 + 4,
+	.htotal = 1200 + 64 + 4 + 36,
 	.vdisplay = 1920,
 	.vsync_start = 1920 + 104,
 	.vsync_end = 1920 + 104 + 2,
@@ -203,18 +203,24 @@ static const struct drm_panel_funcs huawei_nt51021_panel_funcs = {
 
 static int huawei_nt51021_set_brightness(struct mipi_dsi_device *dsi, u16 brightness)
 {
-    u8 val = (u8)brightness;
+    struct huawei_nt51021 *ctx = mipi_dsi_get_drvdata(dsi);
     struct mipi_dsi_multi_context dsi_ctx = { .dsi = dsi };
+    u8 val = (u8)brightness;
+    u8 tx_buf[2];
 
     if (val > 0)
         val = val + 7;
+
     if (val >= 23 && val <= 30)
         val = 30;
+
+    tx_buf[0] = NT51021_REG_BKLT_PWM;
+    tx_buf[1] = val;
 
     mipi_dsi_dcs_write_seq_multi(&dsi_ctx, 0x83, 0x00);
     mipi_dsi_dcs_write_seq_multi(&dsi_ctx, 0x84, 0x00);
     
-    mipi_dsi_dcs_write_buffer_multi(&dsi_ctx, NT51021_REG_BKLT_PWM, &val, 1);
+    mipi_dsi_dcs_write_buffer_multi(&dsi_ctx, tx_buf, sizeof(tx_buf));
 
     return dsi_ctx.accum_err;
 }
