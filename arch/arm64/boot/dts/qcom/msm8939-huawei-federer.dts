@@ -589,7 +589,7 @@
 &sound {
 	status = "okay";
 
-	model = "wt86528";
+	model = "federer";
 	widgets =
 		"Speaker", "Speaker",
 		"Headphone", "Headphones";
