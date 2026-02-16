@@ -23,14 +23,16 @@ struct huawei_nt51021 {
 	struct regulator_bulk_data *supplies;
 	struct gpio_desc *reset_gpio;
 	struct gpio_desc *backlight_gpio;
+	struct gpio_desc *vcc_gpio;
+	struct gpio_desc *blpwr_gpio;
 	bool bl_enabled;
 };
 
-static const struct regulator_bulk_data huawei_nt51021_supplies[] = {
+/*static const struct regulator_bulk_data huawei_nt51021_supplies[] = {
 	{ .supply = "vddio" },
 	{ .supply = "vsp" },
 	{ .supply = "vsn" },
-};
+};*/
 
 #define NT51021_REG_BKLT_PWM 0x9f
 
@@ -138,12 +140,16 @@ static int huawei_nt51021_prepare(struct drm_panel *panel)
 	struct device *dev = &ctx->dsi->dev;
 	int ret;
 
-	ret = regulator_bulk_enable(ARRAY_SIZE(huawei_nt51021_supplies), ctx->supplies);
+	/*ret = regulator_bulk_enable(ARRAY_SIZE(huawei_nt51021_supplies), ctx->supplies);
 	if (ret < 0) {
 		dev_err(dev, "Failed to enable regulators: %d\n", ret);
 		return ret;
 	}
-	msleep(200);
+	msleep(200);*/
+	gpiod_set_value_cansleep(ctx->vcc_gpio, 1);
+	msleep(500);
+	gpiod_set_value_cansleep(ctx->blpwr_gpio, 1);
+	msleep(50);
 
 	huawei_nt51021_reset(ctx);
 
@@ -151,7 +157,11 @@ static int huawei_nt51021_prepare(struct drm_panel *panel)
 	if (ret < 0) {
 		dev_err(dev, "Failed to initialize panel: %d\n", ret);
 		gpiod_set_value_cansleep(ctx->reset_gpio, 1);
-		regulator_bulk_disable(ARRAY_SIZE(huawei_nt51021_supplies), ctx->supplies);
+		gpiod_set_value_cansleep(ctx->blpwr_gpio, 0);
+		msleep(50);
+		gpiod_set_value_cansleep(ctx->vcc_gpio, 0);
+		msleep(500);
+		//regulator_bulk_disable(ARRAY_SIZE(huawei_nt51021_supplies), ctx->supplies);
 		return ret;
 	}
 
@@ -169,7 +179,11 @@ static int huawei_nt51021_unprepare(struct drm_panel *panel)
 		dev_err(dev, "Failed to un-initialize panel: %d\n", ret);
 
 	gpiod_set_value_cansleep(ctx->reset_gpio, 1);
-	regulator_bulk_disable(ARRAY_SIZE(huawei_nt51021_supplies), ctx->supplies);
+	gpiod_set_value_cansleep(ctx->blpwr_gpio, 0);
+	msleep(50);
+	gpiod_set_value_cansleep(ctx->vcc_gpio, 0);
+	msleep(500);
+	//regulator_bulk_disable(ARRAY_SIZE(huawei_nt51021_supplies), ctx->supplies);
 
 	return 0;
 }
@@ -269,17 +283,27 @@ static int huawei_nt51021_probe(struct mipi_dsi_device *dsi)
 	if (!ctx)
 		return -ENOMEM;
 
-	ret = devm_regulator_bulk_get_const(dev,
+	/*ret = devm_regulator_bulk_get_const(dev,
 					    ARRAY_SIZE(huawei_nt51021_supplies),
 					    huawei_nt51021_supplies,
 					    &ctx->supplies);
 	if (ret < 0)
-		return ret;
+		return ret;*/
 
 	ctx->reset_gpio = devm_gpiod_get(dev, "reset", GPIOD_OUT_HIGH);
 	if (IS_ERR(ctx->reset_gpio))
 		return dev_err_probe(dev, PTR_ERR(ctx->reset_gpio),
 				     "Failed to get reset-gpios\n");
+
+	ctx->vcc_gpio = devm_gpiod_get(dev, "vcc", GPIOD_OUT_LOW);
+	if (IS_ERR(ctx->vcc_gpio))
+		return dev_err_probe(dev, PTR_ERR(ctx->vcc_gpio),
+				     "Failed to get vcc-gpios\n");
+
+	ctx->blpwr_gpio = devm_gpiod_get(dev, "blpwr", GPIOD_OUT_LOW);
+	if (IS_ERR(ctx->blpwr_gpio))
+		return dev_err_probe(dev, PTR_ERR(ctx->blpwr_gpio),
+				     "Failed to get backlight-power-gpios\n");
 
 	ctx->backlight_gpio = devm_gpiod_get(dev, "backlight", GPIOD_OUT_LOW);
 	if (IS_ERR(ctx->backlight_gpio))

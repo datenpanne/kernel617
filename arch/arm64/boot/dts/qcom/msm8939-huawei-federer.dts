@@ -245,7 +245,7 @@
 		regulator-always-on;
 	};
 
-	reg_lcd_vddio: regulator-lcd-vddio {
+	/*reg_lcd_vddio: regulator-lcd-vddio {
 		compatible = "regulator-fixed";
 		regulator-name = "vddio_1v8";
 		
@@ -269,7 +269,7 @@
 		
 		pinctrl-0 = <&lcd_vsp_vsn_default>;
 		pinctrl-names = "default";
-	};
+	};*/
 
 	otg_path: otg_path {
 		compatible = "regulator-fixed";
@@ -408,10 +408,11 @@
 		compatible = "huawei,federer-panel";
 		reg = <0>;
 
-		vddio-supply = <&reg_lcd_vddio>;
+		/*vddio-supply = <&reg_lcd_vddio>;
 		vsp-supply = <&reg_lcd_vsp_vsn>;
-		vsn-supply = <&reg_lcd_vsp_vsn>;
-
+		vsn-supply = <&reg_lcd_vsp_vsn>;*/
+		vcc-gpios = <&tlmm 32 GPIO_ACTIVE_HIGH>;	
+		blpwr-gpios = <&tlmm 109 GPIO_ACTIVE_HIGH>;
 		backlight-gpios = <&tlmm 97 GPIO_ACTIVE_HIGH>;
 		reset-gpios = <&tlmm 25 GPIO_ACTIVE_LOW>;
 		
