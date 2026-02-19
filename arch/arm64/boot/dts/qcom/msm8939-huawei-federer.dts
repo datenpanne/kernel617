@@ -194,7 +194,7 @@
 		VCC-supply = <&speaker_boost>; 
 
 		enable-gpios = <&tlmm 3 GPIO_ACTIVE_HIGH>; // Enable GPIO
-		startup-delay-us = <100000>
+		startup-delay-us = <100000>;
 		pinctrl-0 = <&speaker_switch_in_default &speaker_amp_default>;
 		
 		//pinctrl-1 = <&speaker_switch_in_sleep>;
