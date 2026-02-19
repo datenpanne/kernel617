@@ -194,12 +194,13 @@
 		VCC-supply = <&speaker_boost>; 
 
 		enable-gpios = <&tlmm 3 GPIO_ACTIVE_HIGH>; // Enable GPIO
-
-		pinctrl-0 = <&speaker_switch_in_default>; 
+		startup-delay-us = <100000>
+		pinctrl-0 = <&speaker_switch_in_default &speaker_amp_default>;
+		
 		//pinctrl-1 = <&speaker_switch_in_sleep>;
 		pinctrl-names = "default";//,"sleep";
 		
-		sound-name-prefix = "Speaker Amp";
+		sound-name-prefix = "Speaker";
 	};
 
 	reg_tp_vdd: regulator-tp-vdd@112 {
@@ -597,10 +598,12 @@
 		"Headphone", "Headphones";
 
 	audio-routing =
-		"Speaker", "Speaker Amp OUTL",
-		"Speaker", "Speaker Amp OUTR",
-		"Speaker Amp INL", "HPH_L",
-		"Speaker Amp INR", "HPH_R",
+		"Speaker INL", "HPH_L",
+		"Speaker INR", "HPH_R",
+        
+		"Speaker", "Speaker OUTL",
+		"Speaker", "Speaker OUTR",
+        
 		"Headphones", "HPH_L",
 		"Headphones", "HPH_R";
 
@@ -760,6 +763,15 @@
 		function = "gpio";
 		drive-strength = <2>;
 		bias-disable;
+	};
+
+        speaker_amp_default: speaker-amp-default-state {
+		pins = "gpio3";
+		function = "gpio";
+
+		drive-strength = <2>;
+		bias-disable;
+		output-high;
 	};
 
 	speaker_switch_in_default: speaker-switch-in-default-state {
