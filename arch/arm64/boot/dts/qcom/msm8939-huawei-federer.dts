@@ -185,7 +185,7 @@
 		regulator-name = "speaker-vdd";
 		gpios = <&tlmm 0 GPIO_ACTIVE_HIGH>; // VDD Switch
 		enable-active-high;
-		regulator-boot-on;
+		regulator-always-on;
 	};
 
 	speaker_amp: audio-amplifier {
@@ -195,10 +195,10 @@
 		enable-gpios = <&tlmm 3 GPIO_ACTIVE_HIGH>; // Enable GPIO
 
 		pinctrl-0 = <&speaker_switch_in_default>; 
-		pinctrl-1 = <&speaker_switch_in_sleep>;
-		pinctrl-names = "default","sleep";
+		//pinctrl-1 = <&speaker_switch_in_sleep>;
+		pinctrl-names = "default";//,"sleep";
 		
-		sound-name-prefix = "Speaker";
+		sound-name-prefix = "Speaker Amp";
 	};
 
 	reg_tp_vdd: regulator-tp-vdd@112 {
@@ -596,10 +596,10 @@
 		"Headphone", "Headphones";
 
 	audio-routing =
-		"Speaker", "Speaker OUTL",
-		"Speaker", "Speaker OUTR",
-		"Speaker INL", "HPH_L",
-		"Speaker INR", "HPH_R",
+		"Speaker", "Speaker Amp OUTL",
+		"Speaker", "Speaker Amp OUTR",
+		"Speaker Amp INL", "HPH_L",
+		"Speaker Amp INR", "HPH_R",
 		"Headphones", "HPH_L",
 		"Headphones", "HPH_R";
 
