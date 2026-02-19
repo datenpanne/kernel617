@@ -102,20 +102,20 @@ static int huawei_nt51021_on(struct huawei_nt51021 *ctx)
 	mipi_dsi_dcs_write_seq_multi(&dsi_ctx, 0x86, 0x08);
 	mipi_dsi_dcs_write_seq_multi(&dsi_ctx, 0x9c, 0x10);
 
-	/* PWM-Frequenz Setup (Page BB/22) */
-	mipi_dsi_dcs_write_seq_multi(&dsi_ctx, 0x83, 0xBB); 
-	mipi_dsi_dcs_write_seq_multi(&dsi_ctx, 0x84, 0x22);
-	mipi_dsi_dcs_write_seq_multi(&dsi_ctx, 0x94, 0x58); // 17 kHz
-
-	/* Back to page 0*/
+	/* Back to page 0
 	mipi_dsi_dcs_write_seq_multi(&dsi_ctx, 0x83, 0x00);
-	mipi_dsi_dcs_write_seq_multi(&dsi_ctx, 0x84, 0x00);
+	mipi_dsi_dcs_write_seq_multi(&dsi_ctx, 0x84, 0x00);*/
 
 	/* Exit Sleep & Display On */
 	mipi_dsi_dcs_exit_sleep_mode_multi(&dsi_ctx);
 	mipi_dsi_msleep(&dsi_ctx, 120);
 	mipi_dsi_dcs_set_display_on_multi(&dsi_ctx);
 	mipi_dsi_msleep(&dsi_ctx, 20);
+
+	/* PWM-Frequenz Setup (Page BB/22) */
+	mipi_dsi_dcs_write_seq_multi(&dsi_ctx, 0x83, 0xBB); 
+	mipi_dsi_dcs_write_seq_multi(&dsi_ctx, 0x84, 0x22);
+	mipi_dsi_dcs_write_seq_multi(&dsi_ctx, 0x94, 0x58); // 17 kHz
 
 	return dsi_ctx.accum_err;
 }

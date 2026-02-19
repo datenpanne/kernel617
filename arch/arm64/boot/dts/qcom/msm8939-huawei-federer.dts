@@ -185,7 +185,7 @@
 		regulator-name = "speaker-vdd";
 		gpios = <&tlmm 0 GPIO_ACTIVE_HIGH>; // VDD Switch
 		enable-active-high;
-		regulator-always-on;
+		regulator-boot-on;
 	};
 
 	speaker_amp: audio-amplifier {
@@ -194,9 +194,10 @@
 
 		enable-gpios = <&tlmm 3 GPIO_ACTIVE_HIGH>; // Enable GPIO
 
-		pinctrl-names = "default";
-		pinctrl-0 = < &speaker_switch_in_default>; 
-
+		pinctrl-0 = <&speaker_switch_in_default>; 
+		pinctrl-1 = <&speaker_switch_in_sleep>;
+		pinctrl-names = "default","sleep";
+		
 		sound-name-prefix = "Speaker";
 	};
 
@@ -589,7 +590,7 @@
 &sound {
 	status = "okay";
 
-	model = "federer";
+	model = "wt86528";
 	widgets =
 		"Speaker", "Speaker",
 		"Headphone", "Headphones";
@@ -705,7 +706,7 @@
 		bias-disable;
 	};
 
-	lcd_vsp_vsn_default: lcd-vsp-vsn-default-state {
+	/*lcd_vsp_vsn_default: lcd-vsp-vsn-default-state {
 		pins = "gpio109";
 		function = "gpio";
 
@@ -721,7 +722,7 @@
 		drive-strength = <2>;
 		bias-pull-up;
 		output-high;
-	};
+	};*/
 	
 	mdss_default: mdss-default-state {
 		pins = "gpio25";
@@ -768,7 +769,16 @@
 		bias-disable;
 		output-high;
 	};
+	
+	speaker_switch_in_sleep: speaker-switch-in-sleep-state {
+		pins = "gpio1";
+		function = "gpio";
 
+		drive-strength = <2>;
+		bias-disable;
+		output-low;
+	};
+	
 	touchscreen_default: touchscreen-default-state {
 		pins = "gpio12", "gpio13";
 		function = "gpio";
