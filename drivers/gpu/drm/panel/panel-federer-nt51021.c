@@ -106,7 +106,7 @@ static int huawei_nt51021_on(struct huawei_nt51021 *ctx)
     /* PWM-Frequenz (Page BB/22) */
     mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x83, 0xBB); 
     mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x84, 0x22);
-    //mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x90, 0xc0);
+    mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x90, 0xc0);
     mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x95, 0x11);
     mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x94, 0x58); 
 
@@ -238,7 +238,7 @@ static int huawei_nt51021_set_brightness(struct mipi_dsi_device *dsi, u16 bright
     dsi->mode_flags |= MIPI_DSI_MODE_LPM;
 
     /* Write Protect öffnen & Page 0 sicherstellen
-    mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x8f, 0xa5); */
+    mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x8f, 0xa5);
 
     mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x83, 0xBB); 
     mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x84, 0x22);
@@ -246,7 +246,7 @@ static int huawei_nt51021_set_brightness(struct mipi_dsi_device *dsi, u16 bright
     mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x95, 0xb1);
     mipi_dsi_usleep_range(&dsi_ctx, 1000, 1500);  
     mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x83, 0x00);
-    mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x84, 0x00);
+    mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x84, 0x00); */
     
     mipi_dsi_usleep_range(&dsi_ctx, 1000, 1500);
 
