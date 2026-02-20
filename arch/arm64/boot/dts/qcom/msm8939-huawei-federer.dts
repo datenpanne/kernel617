@@ -3,7 +3,7 @@
 /dts-v1/;
 
 #include "msm8939-pm8916.dtsi"
-#include "msm8916-modem-qdsp6.dtsi"
+//#include "msm8916-modem-qdsp6.dtsi"
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
@@ -11,6 +11,7 @@
 #include <dt-bindings/leds/common.h>
 #include <dt-bindings/pinctrl/qcom,pmic-gpio.h>
 #include <dt-bindings/pinctrl/qcom,pmic-mpp.h>
+#include <dt-bindings/sound/apq8016-lpass.h>
 
 / {
 	model = "Huawei MediaPad T2 Pro 10.0";
@@ -359,6 +360,14 @@
 	status = "okay";
 };
 
+&lpass {
+	status = "okay";
+};
+
+&lpass_codec {
+	status = "okay";
+};
+
 &mdss {
 	status = "okay";
 };
@@ -589,25 +598,72 @@
 	status = "okay";
 };
 
+/*
 &sound {
 	status = "okay";
 
-	model = "oppo-a51f";
+	model = "wt86528";
 	widgets =
 		"Speaker", "Speaker",
 		"Headphone", "Headphones";
 
 	audio-routing =
 		"Speaker INL", "HPH_L",
-		//"Speaker INR", "HPH_R",
-        
+		"Speaker INR", "HPH_R",  
 		"Speaker", "Speaker OUTL",
-		//"Speaker", "Speaker OUTR",
-        
+		"Speaker", "Speaker OUTR",
 		"Headphones", "HPH_L",
 		"Headphones", "HPH_R";
-
+		"AMIC1", "MIC BIAS External1",
+		"AMIC2", "MIC BIAS External2",
+		"AMIC3", "MIC BIAS External1";
 	aux-devs = <&speaker_amp>;
+};
+*/
+
+&sound {
+	status = "okay";
+
+	model = "wt86528";
+	widgets =
+		"Speaker", "Speaker",
+		"Headphone", "Headphones";
+
+	audio-routing =
+		"Speaker INL", "HPH_L",
+		"Speaker INR", "HPH_R",
+		"Speaker", "Speaker OUTL",
+		"Speaker", "Speaker OUTR",
+		"Headphones", "HPH_L",
+		"Headphones", "HPH_R";
+		"AMIC1", "MIC BIAS External1",
+		"AMIC2", "MIC BIAS External2",
+		"AMIC3", "MIC BIAS External1";
+	aux-devs = <&speaker_amp>;
+
+	pinctrl-names = "default", "sleep";
+	pinctrl-0 = <&cdc_pdm_default>;
+	pinctrl-1 = <&cdc_pdm_sleep>;
+
+	primary-dai-link {
+		link-name = "WCD";
+		cpu {
+			sound-dai = <&lpass MI2S_PRIMARY>;
+		};
+		codec {
+			sound-dai = <&lpass_codec 0>, <&pm8916_codec 0>;
+		};
+	};
+
+	tertiary-dai-link {
+		link-name = "WCD-Capture";
+		cpu {
+			sound-dai = <&lpass MI2S_TERTIARY>;
+		};
+		codec {
+			sound-dai = <&lpass_codec 1>, <&pm8916_codec 1>;
+		};
+	};
 };
 
 &usb {
