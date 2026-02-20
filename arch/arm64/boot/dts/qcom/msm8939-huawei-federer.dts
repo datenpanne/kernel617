@@ -613,7 +613,7 @@
 		"Speaker", "Speaker OUTL",
 		"Speaker", "Speaker OUTR",
 		"Headphones", "HPH_L",
-		"Headphones", "HPH_R";
+		"Headphones", "HPH_R",
 		"AMIC1", "MIC BIAS External1",
 		"AMIC2", "MIC BIAS External2",
 		"AMIC3", "MIC BIAS External1";
@@ -625,17 +625,13 @@
 	status = "okay";
 
 	model = "wt86528";
-	widgets =
-		"Speaker", "Speaker",
-		"Headphone", "Headphones";
-
 	audio-routing =
 		"Speaker INL", "HPH_L",
-		"Speaker INR", "HPH_R",
+		"Speaker INR", "HPH_R",  
 		"Speaker", "Speaker OUTL",
 		"Speaker", "Speaker OUTR",
 		"Headphones", "HPH_L",
-		"Headphones", "HPH_R";
+		"Headphones", "HPH_R",
 		"AMIC1", "MIC BIAS External1",
 		"AMIC2", "MIC BIAS External2",
 		"AMIC3", "MIC BIAS External1";
