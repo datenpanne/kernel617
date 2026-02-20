@@ -411,10 +411,11 @@
 	status = "okay";
 };
 
+/*
 &mpss_mem {
 	reg = <0x0 0x86800000 0x0 0x5600000>;
 	//reg = <0x0 0x86800000 0x0 0x2b00000>;
-};
+};*/
 
 &pm8916_bms {
 	monitored-battery = <&battery>;
