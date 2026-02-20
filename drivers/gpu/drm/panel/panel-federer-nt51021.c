@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * DRM Driver for BOE NT51021 1200p Video Mode Panel
- * Based on Huawei Federer (MediaPad T2 Pro) Vendor Sources
+ * Based on Huawei MediaPad T2 Pro (Federer) Vendor Sources
  */
 
 #include <linux/backlight.h>
@@ -54,13 +54,13 @@ static int huawei_nt51021_on(struct huawei_nt51021 *ctx)
 
     ctx->dsi->mode_flags |= MIPI_DSI_MODE_LPM;
 
-    /* Write Protect open
+    /* Write Protect open*/
     mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x8f, 0xa5);
     mipi_dsi_usleep_range(&dsi_ctx, 5000, 6000);
     mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x01, 0x00);
     mipi_dsi_msleep(&dsi_ctx, 30);
     mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x8f, 0xa5);
-    mipi_dsi_usleep_range(&dsi_ctx, 1000, 2000);*/
+    mipi_dsi_usleep_range(&dsi_ctx, 1000, 2000);
 
     /* Page 0 */
     mipi_dsi_dcs_write_seq_multi(&dsi_ctx, 0x83, 0x00);
@@ -120,8 +120,8 @@ static int huawei_nt51021_on(struct huawei_nt51021 *ctx)
     mipi_dsi_dcs_set_display_on_multi(&dsi_ctx);
     mipi_dsi_msleep(&dsi_ctx, 20);
 
-    /* Write Protect close
-    mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x8f, 0x00); */
+    /* Write Protect close */
+    mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x8f, 0x00);
 
     return dsi_ctx.accum_err;
 }
@@ -233,13 +233,12 @@ static int huawei_nt51021_set_brightness(struct mipi_dsi_device *dsi, u16 bright
     tx_buf[0] = NT51021_REG_BKLT_PWM;
     tx_buf[1] = val;
 
-    /* Write Protect öffnen & Page 0 sicherstellen
+    /* Write Protect öffnen & Page 0 sicherstellen */
     mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x8f, 0xa5);
     mipi_dsi_dcs_write_seq_multi(&dsi_ctx, 0x83, 0x00);
-    mipi_dsi_dcs_write_seq_multi(&dsi_ctx, 0x84, 0x00); */
+    mipi_dsi_dcs_write_seq_multi(&dsi_ctx, 0x84, 0x00);
     
-    /* Gedenkpause für den Controller-Umschaltvorgang */
-    mipi_dsi_usleep_range(&dsi_ctx, 500, 1000);
+    mipi_dsi_usleep_range(&dsi_ctx, 1000, 1500);
 
     mipi_dsi_dcs_write_buffer_multi(&dsi_ctx, tx_buf, sizeof(tx_buf));
 
@@ -256,8 +255,8 @@ static int huawei_nt51021_bl_update_status(struct backlight_device *bl)
     u16 brightness = backlight_get_brightness(bl);
     bool want_on = !!brightness;
 
-    /* Zwinge Befehle in stabilen LPM Modus */
-    dsi->mode_flags |= MIPI_DSI_MODE_LPM;
+    /* Zwinge Befehle in stabilen LPM Modus
+    dsi->mode_flags |= MIPI_DSI_MODE_LPM; */
 
     if (want_on && !ctx->bl_enabled) {
         gpiod_set_value_cansleep(ctx->backlight_gpio, 1);
@@ -285,7 +284,7 @@ huawei_nt51021_create_backlight(struct mipi_dsi_device *dsi)
     struct device *dev = &dsi->dev;
     const struct backlight_properties props = {
         .type = BACKLIGHT_RAW,
-        .brightness = 128,
+        .brightness = 112,
         .max_brightness = 255,
     };
 
@@ -325,9 +324,17 @@ static int huawei_nt51021_probe(struct mipi_dsi_device *dsi)
     dsi->lanes = 4;
     dsi->format = MIPI_DSI_FMT_RGB888;
 
-    dsi->mode_flags = MIPI_DSI_MODE_VIDEO | 
+    dsi->mode_flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_BURST |
+			  MIPI_DSI_MODE_VIDEO_HSE;
+			  /*MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_SYNC_PULSE |
+			MIPI_DSI_CLOCK_NON_CONTINUOUS | MIPI_DSI_MODE_LPM;*/
+			  /*MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_NO_EOT_PACKET |
+			  MIPI_DSI_MODE_VIDEO_SYNC_PULSE |
+			  MIPI_DSI_CLOCK_NON_CONTINUOUS |
+			  MIPI_DSI_MODE_LPM;*/
+    /*MIPI_DSI_MODE_VIDEO | //orig
                       MIPI_DSI_MODE_NO_EOT_PACKET |
-                      MIPI_DSI_MODE_LPM;
+                      MIPI_DSI_MODE_LPM;*/
 
     drm_panel_init(&ctx->panel, dev, &huawei_nt51021_panel_funcs, DRM_MODE_CONNECTOR_DSI);
     ctx->panel.prepare_prev_first = true;

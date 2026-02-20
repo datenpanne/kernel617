@@ -592,17 +592,17 @@
 &sound {
 	status = "okay";
 
-	model = "wt86528";
+	model = "oppo-a51f";
 	widgets =
 		"Speaker", "Speaker",
 		"Headphone", "Headphones";
 
 	audio-routing =
 		"Speaker INL", "HPH_L",
-		"Speaker INR", "HPH_R",
+		//"Speaker INR", "HPH_R",
         
 		"Speaker", "Speaker OUTL",
-		"Speaker", "Speaker OUTR",
+		//"Speaker", "Speaker OUTR",
         
 		"Headphones", "HPH_L",
 		"Headphones", "HPH_R";
