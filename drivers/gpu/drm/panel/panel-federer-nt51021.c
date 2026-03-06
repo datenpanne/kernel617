@@ -22,7 +22,7 @@ struct huawei_nt51021 {
     struct mipi_dsi_device *dsi;
     struct regulator_bulk_data *supplies;
     struct gpio_desc *reset_gpio;
-    struct gpio_desc *backlight_gpio;
+    struct gpio_desc *bl_gpio;
     struct gpio_desc *vcc_gpio;
     struct gpio_desc *blpwr_gpio;
     bool bl_enabled;
@@ -78,7 +78,6 @@ static int huawei_nt51021_on(struct huawei_nt51021 *ctx)
     mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x91, 0xa0);
     mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x9a, 0x10);
     mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x94, 0x78);
-
     
     /* Gamma / Color */
     mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0xa1, 0xff);
@@ -237,9 +236,9 @@ static int huawei_nt51021_set_brightness(struct mipi_dsi_device *dsi, u16 bright
     /* Zwinge Befehle in stabilen LPM Modus */
     dsi->mode_flags |= MIPI_DSI_MODE_LPM;
 
-    /* Write Protect öffnen & Page 0 sicherstellen
+    //Write Protect öffnen & Page 0 sicherstellen
     mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x8f, 0xa5);
-
+/* 
     mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x83, 0xBB); 
     mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x84, 0x22);
     mipi_dsi_generic_write_seq_multi(&dsi_ctx, 0x90, 0xc0);
@@ -266,14 +265,14 @@ static int huawei_nt51021_bl_update_status(struct backlight_device *bl)
     bool want_on = !!brightness;
 
     if (want_on && !ctx->bl_enabled) {
-        gpiod_set_value_cansleep(ctx->backlight_gpio, 1);
+        gpiod_set_value_cansleep(ctx->bl_gpio, 1);
         msleep(120); 
         ctx->bl_enabled = true;
     } 
     else if (!want_on && ctx->bl_enabled) {
         huawei_nt51021_set_brightness(dsi, 0);
         msleep(20);
-        gpiod_set_value_cansleep(ctx->backlight_gpio, 0);
+        gpiod_set_value_cansleep(ctx->bl_gpio, 0);
         ctx->bl_enabled = false;
         return 0;
     }
@@ -321,9 +320,9 @@ static int huawei_nt51021_probe(struct mipi_dsi_device *dsi)
     if (IS_ERR(ctx->blpwr_gpio))
         return dev_err_probe(dev, PTR_ERR(ctx->blpwr_gpio), "Failed to get backlight-power-gpios\n");
 
-    ctx->backlight_gpio = devm_gpiod_get(dev, "backlight", GPIOD_OUT_LOW);
-    if (IS_ERR(ctx->backlight_gpio))
-        return dev_err_probe(dev, PTR_ERR(ctx->backlight_gpio), "Failed to get backlight-gpios\n");
+    ctx->bl_gpio = devm_gpiod_get(dev, "backlight", GPIOD_OUT_LOW);
+    if (IS_ERR(ctx->bl_gpio))
+        return dev_err_probe(dev, PTR_ERR(ctx->bl_gpio), "Failed to get backlight-gpios\n");
 
     ctx->dsi = dsi;
     mipi_dsi_set_drvdata(dsi, ctx);
@@ -344,7 +343,7 @@ static int huawei_nt51021_probe(struct mipi_dsi_device *dsi)
 
     drm_panel_init(&ctx->panel, dev, &huawei_nt51021_panel_funcs, DRM_MODE_CONNECTOR_DSI);
     ctx->panel.prepare_prev_first = true;
-    ctx->bl_enabled = false;
+    ctx->bl->bl_enabled = false;
 
     ctx->panel.backlight = huawei_nt51021_create_backlight(dsi);
     if (IS_ERR(ctx->panel.backlight))

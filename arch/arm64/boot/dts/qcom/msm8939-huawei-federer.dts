@@ -194,7 +194,7 @@
 		compatible = "simple-audio-amplifier";
 		VCC-supply = <&speaker_boost>; 
 
-		enable-gpios = <&tlmm 3 GPIO_ACTIVE_LOW>; // Enable GPIO
+		enable-gpios = <&tlmm 3 GPIO_ACTIVE_HIGH>; // Enable GPIO
 		startup-delay-us = <200000>;
 		pinctrl-0 = <&speaker_switch_in_default>;
 		
@@ -359,14 +359,6 @@
 &gpu {
 	status = "okay";
 };
-/*
-&lpass {
-	status = "okay";
-};
-
-&lpass_codec {
-	status = "okay";
-};*/
 
 &mdss {
 	status = "okay";
@@ -620,51 +612,6 @@
 	aux-devs = <&speaker_amp>;
 };
 
-/*
-&sound {
-	status = "okay";
-
-	model = "wt86528";
-	widgets =
-		"Speaker", "Speaker",
-		"Headphone", "Headphones";
-	audio-routing =
-		"Speaker INL", "HPH_L",
-		"Speaker INR", "HPH_R",  
-		"Speaker", "Speaker OUTL",
-		"Speaker", "Speaker OUTR",
-		"Headphones", "HPH_L",
-		"Headphones", "HPH_R",
-		"AMIC1", "MIC BIAS External1",
-		"AMIC2", "MIC BIAS External2",
-		"AMIC3", "MIC BIAS External1";
-	aux-devs = <&speaker_amp>;
-
-	pinctrl-names = "default", "sleep";
-	pinctrl-0 = <&cdc_pdm_default>;
-	pinctrl-1 = <&cdc_pdm_sleep>;
-
-	primary-dai-link {
-		link-name = "WCD";
-		cpu {
-			sound-dai = <&lpass MI2S_PRIMARY>;
-		};
-		codec {
-			sound-dai = <&lpass_codec 0>, <&pm8916_codec 0>;
-		};
-	};
-
-	tertiary-dai-link {
-		link-name = "WCD-Capture";
-		cpu {
-			sound-dai = <&lpass MI2S_TERTIARY>;
-		};
-		codec {
-			sound-dai = <&lpass_codec 1>, <&pm8916_codec 1>;
-		};
-	};
-};
-*/
 &usb {
 	//extcon = <&usb_id>, <&usb_id>;
 	extcon = <&charger>, <&usb_id>;
@@ -820,20 +767,21 @@
 		bias-disable;
 	};
 
-        speaker_amp_default: speaker-amp-default-state {
+       /* speaker_amp_default: speaker-amp-default-state {
 		pins = "gpio3";
 		function = "gpio";
 
 		drive-strength = <2>;
 		bias-disable;
 		output-low;
-	};
+	};*/
 
 	speaker_switch_in_default: speaker-switch-in-default-state {
 		pins = "gpio1";
 		function = "gpio";
 		drive-strength = <2>;
 		bias-disable;
+		//output-low;
 	};
 	
 	touchscreen_default: touchscreen-default-state {
