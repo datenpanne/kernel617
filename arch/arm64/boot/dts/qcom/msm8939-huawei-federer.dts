@@ -606,6 +606,7 @@
 		"Speaker", "Speaker",
 		"Headphone", "Headphones";
 
+	pin-switches = "Speaker";
 	audio-routing =
 		"Speaker INL", "HPH_L",
 		"Speaker INR", "HPH_R",  
@@ -831,10 +832,8 @@
 	speaker_switch_in_default: speaker-switch-in-default-state {
 		pins = "gpio1";
 		function = "gpio";
-
 		drive-strength = <2>;
 		bias-disable;
-		output-low;
 	};
 	
 	touchscreen_default: touchscreen-default-state {
