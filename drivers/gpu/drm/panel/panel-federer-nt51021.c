@@ -343,7 +343,7 @@ static int huawei_nt51021_probe(struct mipi_dsi_device *dsi)
 
     drm_panel_init(&ctx->panel, dev, &huawei_nt51021_panel_funcs, DRM_MODE_CONNECTOR_DSI);
     ctx->panel.prepare_prev_first = true;
-    ctx->bl->bl_enabled = false;
+    ctx->bl_enabled = false;
 
     ctx->panel.backlight = huawei_nt51021_create_backlight(dsi);
     if (IS_ERR(ctx->panel.backlight))
