@@ -179,7 +179,7 @@
 		regulator-name = "speaker-boost";
 		gpios = <&tlmm 2 GPIO_ACTIVE_HIGH>; // Boost GPIO
 		enable-active-high;
-		regulator-always-on;	
+		//regulator-always-on;	
 	};
 
 	speaker_vdd: regulator-speaker-vdd {
@@ -194,7 +194,7 @@
 		compatible = "simple-audio-amplifier";
 		VCC-supply = <&speaker_boost>; 
 
-		enable-gpios = <&tlmm 3 GPIO_ACTIVE_HIGH>; // Enable GPIO
+		enable-gpios = <&tlmm 3 GPIO_ACTIVE_LOW>; // Enable GPIO
 		startup-delay-us = <200000>;
 		pinctrl-0 = <&speaker_switch_in_default>;
 		
@@ -781,7 +781,7 @@
 		function = "gpio";
 		drive-strength = <2>;
 		bias-disable;
-		output-low;
+		//output-low;
 	};
 	
 	touchscreen_default: touchscreen-default-state {
