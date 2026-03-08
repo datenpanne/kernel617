@@ -781,7 +781,7 @@
 		function = "gpio";
 		drive-strength = <2>;
 		bias-disable;
-		//output-low;
+		output-low;
 	};
 	
 	touchscreen_default: touchscreen-default-state {
