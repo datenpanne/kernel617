@@ -64,20 +64,19 @@
 	battery: battery {
 		compatible = "simple-battery";
 		device-chemistry = "lithium-ion-polymer";
-
 		voltage-min-design-microvolt = <3350000>;
 		voltage-max-design-microvolt = <4350000>;
 		energy-full-design-microwatt-hours = <24700000>;
 		charge-full-design-microamp-hours = <6500000>;
-
 		precharge-current-microamp = <1300000>;
 		charge-term-current-microamp = <260000>; //4%(from vendor dts)
+
 		//charge-term-current-microamp = <650000>;
 
 		//constant-charge-voltage-max-microvolt = <3800000>; //not charging?
-		constant-charge-voltage-max-microvolt = <4350000>;
+		//constant-charge-voltage-max-microvolt = <4350000>;
 
-		factory-internal-resistance-micro-ohms = <118000>;
+		//factory-internal-resistance-micro-ohms = <118000>;
 		//operating-range-celsius = <0 52>;
 		//alert-celsius = <10 42>;
 
@@ -179,7 +178,7 @@
 		regulator-name = "speaker-boost";
 		gpios = <&tlmm 2 GPIO_ACTIVE_HIGH>; // Boost GPIO
 		enable-active-high;
-		//regulator-always-on;	
+		regulator-always-on;	
 	};
 
 	speaker_vdd: regulator-speaker-vdd {
@@ -192,16 +191,25 @@
 
 	speaker_amp: audio-amplifier {
 		compatible = "simple-audio-amplifier";
-		VCC-supply = <&speaker_boost>; 
+		VCC-supply = <&speaker_vdd>;
+		vin-supply = <&speaker_boost>;
 
-		enable-gpios = <&tlmm 3 GPIO_ACTIVE_LOW>; // Enable GPIO
+		enable-gpios = <&tlmm 3 GPIO_ACTIVE_HIGH>; // Enable GPIO
 		startup-delay-us = <200000>;
-		pinctrl-0 = <&speaker_switch_in_default>;
+		pinctrl-0 = <&speaker_amp_default>;
 		
 		//pinctrl-1 = <&speaker_switch_in_sleep>;
 		pinctrl-names = "default";//,"sleep";
 		
 		sound-name-prefix = "Speaker";
+	};
+
+	headphones_switch: audio-switch {
+		compatible = "simple-audio-amplifier";
+		enable-gpios = <&tlmm 1 GPIO_ACTIVE_HIGH>;
+		sound-name-prefix = "Headphones Switch";
+		pinctrl-0 = <&headphones_switch_default>;
+		pinctrl-names = "default";
 	};
 
 	reg_tp_vdd: regulator-tp-vdd@112 {
@@ -282,8 +290,9 @@
 		vdd-supply = <&pm8916_l17>;
 		vio-supply = <&pm8916_l6>;
 
-		pinctrl-names = "default";
+		pinctrl-names = "default", "sleep";
 		pinctrl-0 = <&light_irq_default>;
+		pinctrl-1 = <&light_irq_sleep>;
 	};
 
 	flash-led-controller@63 {
@@ -415,10 +424,11 @@
 	status = "okay";
 };
 
+/*
 &pm8916_charger {
 	monitored-battery = <&battery>;
 	status = "okay";
-};
+};*/
 
 &pm8916_codec {
 	qcom,micbias-lvl = <2800>;
@@ -597,19 +607,20 @@
 	widgets =
 		"Speaker", "Speaker",
 		"Headphone", "Headphones";
-
-	pin-switches = "Speaker";
+	pin-switches = "Speaker", "Headphones";
 	audio-routing =
-		"Speaker INL", "HPH_L",
-		"Speaker INR", "HPH_R",  
 		"Speaker", "Speaker OUTL",
 		"Speaker", "Speaker OUTR",
-		"Headphones", "HPH_L",
-		"Headphones", "HPH_R",
+		"Speaker INL", "HPH_L",
+		"Speaker INR", "HPH_R", 
+		"Headphones", "Headphones Switch OUTL",
+		"Headphones", "Headphones Switch OUTR",
+		"Headphones Switch INL", "HPH_L",
+		"Headphones Switch INR", "HPH_R",
 		"AMIC1", "MIC BIAS External1",
 		"AMIC2", "MIC BIAS External2",
 		"AMIC3", "MIC BIAS External1";
-	aux-devs = <&speaker_amp>;
+	aux-devs = <&speaker_amp>, <&headphones_switch>;
 };
 
 &usb {
@@ -704,18 +715,30 @@
 		bias-disable;
 	};
 
+	headphones_switch_default: headphones-switch-default-state {
+		pins = "gpio1";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+	};
+
 	light_irq_default: light-irq-default-state {
 		pins = "gpio113";
 		function = "gpio";
+		drive-strength = <6>;
+		bias-pull-up;
+	};
 
+	light_irq_sleep: light-irq-sleep-state {
+		pins = "gpio113";
+		function = "gpio";
 		drive-strength = <2>;
-		bias-disable;
+		bias-pull-down;
 	};
 
 	/*lcd_vsp_vsn_default: lcd-vsp-vsn-default-state {
 		pins = "gpio109";
 		function = "gpio";
-
 		drive-strength = <2>;
 		bias-pull-up;
 		output-high;
@@ -724,7 +747,6 @@
 	lcd_vddio_default: lcd-vddio-default-state {
 		pins = "gpio32";
 		function = "gpio";
-
 		drive-strength = <2>;
 		bias-pull-up;
 		output-high;
@@ -767,22 +789,21 @@
 		bias-disable;
 	};
 
-       /* speaker_amp_default: speaker-amp-default-state {
+        speaker_amp_default: speaker-amp-default-state {
 		pins = "gpio3";
-		function = "gpio";
-
-		drive-strength = <2>;
-		bias-disable;
-		output-low;
-	};*/
-
-	speaker_switch_in_default: speaker-switch-in-default-state {
-		pins = "gpio1";
 		function = "gpio";
 		drive-strength = <2>;
 		bias-disable;
 		//output-low;
 	};
+
+	/*speaker_switch_in_default: speaker-switch-in-default-state {
+		pins = "gpio1";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+		//output-low;
+	};*/
 	
 	touchscreen_default: touchscreen-default-state {
 		pins = "gpio12", "gpio13";
